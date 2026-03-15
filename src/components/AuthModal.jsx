@@ -7,6 +7,8 @@ export default function AuthModal() {
   const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPwd, setShowPwd] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const mode = state.authMode;
 
@@ -93,13 +95,25 @@ export default function AuthModal() {
           {mode !== 'forgot' && (
             <div style={{ marginBottom: mode === 'signup' ? 16 : 8 }}>
               <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-mid)', display: 'block', marginBottom: 6 }}>Password</label>
-              <input className="input-field" type="password" placeholder="••••••••" value={form.password} onChange={(e) => set('password', e.target.value)} />
+              <div style={{ position: 'relative' }}>
+                <input className="input-field" type={showPwd ? 'text' : 'password'} placeholder="••••••••" value={form.password} onChange={(e) => set('password', e.target.value)} style={{ paddingRight: 40 }} />
+                <button type="button" onClick={() => setShowPwd(v => !v)}
+                  style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-light)', padding: 0, fontSize: 16 }}>
+                  {showPwd ? '🙈' : '👁️'}
+                </button>
+              </div>
             </div>
           )}
           {mode === 'signup' && (
             <div style={{ marginBottom: 8 }}>
               <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-mid)', display: 'block', marginBottom: 6 }}>Confirm Password</label>
-              <input className="input-field" type="password" placeholder="••••••••" value={form.confirm} onChange={(e) => set('confirm', e.target.value)} />
+              <div style={{ position: 'relative' }}>
+                <input className="input-field" type={showConfirm ? 'text' : 'password'} placeholder="••••••••" value={form.confirm} onChange={(e) => set('confirm', e.target.value)} style={{ paddingRight: 40 }} />
+                <button type="button" onClick={() => setShowConfirm(v => !v)}
+                  style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-light)', padding: 0, fontSize: 16 }}>
+                  {showConfirm ? '🙈' : '👁️'}
+                </button>
+              </div>
             </div>
           )}
           {mode === 'login' && (

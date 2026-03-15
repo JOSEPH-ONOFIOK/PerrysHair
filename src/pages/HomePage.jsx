@@ -182,7 +182,7 @@ export default function HomePage() {
           </div>
           <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 20, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
             <span style={{ fontSize: 12 }}>© 2025 Perrys Hairline. All rights reserved.</span>
-            <span style={{ fontSize: 12 }}>Built with ❤️ for Lagos</span>
+            <span style={{ fontSize: 12 }}>Built Joseph Onofiok</span>
           </div>
         </div>
       </footer>

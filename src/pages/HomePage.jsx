@@ -4,11 +4,57 @@ import ProductCard from '../components/ProductCard.jsx';
 import HairVisual from '../components/HairVisual.jsx';
 import { HAIR_PRODUCTS, fmt } from '../data.js';
 
+const BobIcon = () => (
+  <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 64, height: 64 }}>
+    <path d="M11 26C11 13 20 4 32 4C44 4 53 13 53 26V41C53 43.2 51.2 45 49 45H15C12.8 45 11 43.2 11 41V26Z" fill="var(--brown-mid)" />
+    <ellipse cx="32" cy="38" rx="13" ry="15" fill="var(--blush)" />
+    <ellipse cx="27" cy="35" rx="1.8" ry="2.2" fill="var(--espresso)" opacity="0.45" />
+    <ellipse cx="37" cy="35" rx="1.8" ry="2.2" fill="var(--espresso)" opacity="0.45" />
+    <path d="M28 42Q32 45 36 42" stroke="var(--espresso)" strokeWidth="1.2" strokeLinecap="round" fill="none" opacity="0.4" />
+    <line x1="11" y1="45" x2="53" y2="45" stroke="var(--brown-mid)" strokeWidth="2.5" strokeLinecap="round" />
+  </svg>
+);
+
+const CurlyIcon = () => (
+  <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 64, height: 64 }}>
+    <path d="M5 30C5 15 17 3 32 3C47 3 59 15 59 30C59 45 50 58 40 59Q36 61 32 61Q28 61 24 59C14 58 5 45 5 30Z" fill="var(--brown-mid)" />
+    <ellipse cx="32" cy="44" rx="12" ry="14" fill="var(--blush)" />
+    <path d="M13 22C13 22 17 17 21 22C21 22 25 27 21 31" stroke="var(--blush)" strokeWidth="1.8" strokeLinecap="round" fill="none" opacity="0.5" />
+    <path d="M43 15C43 15 47 10 51 15C51 15 55 20 51 25" stroke="var(--blush)" strokeWidth="1.8" strokeLinecap="round" fill="none" opacity="0.5" />
+    <path d="M19 40C19 40 23 36 27 40" stroke="var(--blush)" strokeWidth="1.8" strokeLinecap="round" fill="none" opacity="0.5" />
+    <path d="M37 40C37 40 41 36 45 40" stroke="var(--blush)" strokeWidth="1.8" strokeLinecap="round" fill="none" opacity="0.5" />
+  </svg>
+);
+
+const BouncyIcon = () => (
+  <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 64, height: 64 }}>
+    <ellipse cx="32" cy="22" rx="26" ry="20" fill="var(--brown-mid)" />
+    <path d="M6 28C9 36 16 42 16 42C18 46 24 50 32 50C40 50 46 46 48 42C48 42 55 36 58 28" stroke="var(--brown-mid)" strokeWidth="5" strokeLinecap="round" fill="none" />
+    <ellipse cx="32" cy="42" rx="12" ry="14" fill="var(--blush)" />
+    <ellipse cx="27" cy="40" rx="1.8" ry="2.2" fill="var(--espresso)" opacity="0.45" />
+    <ellipse cx="37" cy="40" rx="1.8" ry="2.2" fill="var(--espresso)" opacity="0.45" />
+    <path d="M28 47Q32 50 36 47" stroke="var(--espresso)" strokeWidth="1.2" strokeLinecap="round" fill="none" opacity="0.4" />
+  </svg>
+);
+
+const BoneStraightIcon = () => (
+  <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 64, height: 64 }}>
+    <path d="M20 6L10 62H22L28 26" fill="var(--brown-mid)" />
+    <path d="M44 6L54 62H42L36 26" fill="var(--brown-mid)" />
+    <path d="M20 6Q32 2 44 6L36 26Q32 22 28 26Z" fill="var(--brown-mid)" />
+    <ellipse cx="32" cy="30" rx="13" ry="15" fill="var(--blush)" />
+    <ellipse cx="27" cy="27" rx="1.8" ry="2.2" fill="var(--espresso)" opacity="0.45" />
+    <ellipse cx="37" cy="27" rx="1.8" ry="2.2" fill="var(--espresso)" opacity="0.45" />
+    <path d="M28 35Q32 38 36 35" stroke="var(--espresso)" strokeWidth="1.2" strokeLinecap="round" fill="none" opacity="0.4" />
+    <line x1="31" y1="6" x2="31" y2="26" stroke="var(--blush)" strokeWidth="1.5" opacity="0.5" />
+  </svg>
+);
+
 const sections = [
-  { name: 'Bobs', icon: '✂️', desc: 'Sharp & sophisticated cuts' },
-  { name: 'Curly', icon: '🌀', desc: 'Natural curl magic' },
-  { name: 'Bouncy', icon: '💫', desc: 'Full volume & life' },
-  { name: 'Bone Straight', icon: '⚡', desc: 'Sleek & flawless' },
+  { name: 'Bobs', icon: <BobIcon />, desc: 'Sharp & sophisticated cuts' },
+  { name: 'Curly', icon: <CurlyIcon />, desc: 'Natural curl magic' },
+  { name: 'Bouncy', icon: <BouncyIcon />, desc: 'Full volume & life' },
+  { name: 'Bone Straight', icon: <BoneStraightIcon />, desc: 'Sleek & flawless' },
 ];
 
 export default function HomePage() {
@@ -28,7 +74,7 @@ export default function HomePage() {
               Crown Yourself<br /><em style={{ color: 'var(--gold-light)' }}>Every Day</em>
             </h1>
             <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.7)', lineHeight: 1.7, marginBottom: 32, maxWidth: 460 }}>
-              Discover Lagos's finest collection of 100% human hair wigs and extensions. From sleek bobs to goddess curls — your perfect hair awaits.
+              Discover Lagos's finest collection of 100% human hair wigs and extensions. From sleek bobs to goddess curls your perfect hair awaits.
             </p>
             <div className="hero-cta-btns" style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
               <button className="btn-primary" style={{ fontSize: 15, padding: '14px 32px' }} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'products' })}>Shop Collection</button>

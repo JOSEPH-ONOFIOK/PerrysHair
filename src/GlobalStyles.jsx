@@ -27,7 +27,7 @@ const GlobalStyles = () => (
     h1,h2,h3,h4,h5 { font-family: 'Playfair Display', serif; }
     p, .section-subtitle { font-family: 'Cormorant Garamond', serif; letter-spacing: 0.01em; }
     button { font-family: 'DM Sans', sans-serif; cursor: pointer; border: none; outline: none; }
-    input, select, textarea { font-family: 'DM Sans', sans-serif; outline: none; }
+    input, select, textarea { font-family: 'DM Sans', sans-serif; outline: none; font-size: 16px; }
     a { text-decoration: none; color: inherit; }
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: var(--cream); }

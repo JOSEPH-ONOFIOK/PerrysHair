@@ -113,6 +113,14 @@ const GlobalStyles = () => (
     }
     @keyframes slideInRight { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
 
+    /* Page transition */
+    @keyframes pageFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    main > * { animation: pageFadeIn 0.3s ease; }
+
+    /* Product card click ripple */
+    @keyframes cardPop { 0% { transform: scale(1); } 40% { transform: scale(0.96); } 100% { transform: scale(1); } }
+    .card-click { animation: cardPop 0.25s ease; }
+
     .progress-bar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
     .progress-fill { height: 100%; background: var(--gold); border-radius: 2px; transition: width 0.5s ease; }
 

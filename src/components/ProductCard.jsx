@@ -1,16 +1,23 @@
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { AppContext } from '../context.jsx';
 import HairVisual from './HairVisual.jsx';
 import { fmt } from '../data.js';
 
 export default function ProductCard({ product, compact = false }) {
   const { dispatch } = useContext(AppContext);
+  const [clicking, setClicking] = useState(false);
+
+  const handleClick = () => {
+    setClicking(true);
+    setTimeout(() => setClicking(false), 250);
+    dispatch({ type: 'SELECT_PRODUCT', payload: product });
+  };
 
   return (
     <div
-      className="card"
+      className={`card${clicking ? ' card-click' : ''}`}
       style={{ cursor: 'pointer' }}
-      onClick={() => dispatch({ type: 'SELECT_PRODUCT', payload: product })}
+      onClick={handleClick}
     >
       {/* Image area */}
       <div style={{

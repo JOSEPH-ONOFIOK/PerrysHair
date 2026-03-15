@@ -1,4 +1,4 @@
-import { useContext } from 'react';
+import { useContext, useEffect } from 'react';
 import { AppProvider, AppContext } from './context.jsx';
 import GlobalStyles from './GlobalStyles.jsx';
 
@@ -19,6 +19,10 @@ import AdminDashboard from './pages/AdminDashboard.jsx';
 
 function AppInner() {
   const { state } = useContext(AppContext);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [state.view]);
 
   const renderView = () => {
     switch (state.view) {

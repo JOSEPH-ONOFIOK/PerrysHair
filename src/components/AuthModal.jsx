@@ -24,9 +24,16 @@ export default function AuthModal() {
           setLoading(false);
           return;
         }
-        await signUp(form.email, form.password, form.name);
-        localStorage.setItem('perrys_awaiting_confirm', '1');
-        dispatch({ type: 'SET_AUTH_MODE', payload: 'confirm-sent' });
+        const data = await signUp(form.email, form.password, form.name);
+        if (data.session) {
+          // Email confirmation is OFF — user is logged in immediately
+          dispatch({ type: 'SET_VIEW', payload: 'home' });
+          dispatch({ type: 'SET_TOAST', payload: { msg: `Welcome to Perrys Hairline${form.name ? ', ' + form.name : ''}!`, icon: '🌸' } });
+        } else {
+          // Email confirmation is ON — show check inbox screen
+          localStorage.setItem('perrys_awaiting_confirm', '1');
+          dispatch({ type: 'SET_AUTH_MODE', payload: 'confirm-sent' });
+        }
       } else {
         await signIn(form.email, form.password);
         // Auth listener in context.jsx handles SET_USER

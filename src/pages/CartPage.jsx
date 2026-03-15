@@ -24,7 +24,7 @@ export default function CartPage() {
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: '40px 24px' }}>
       <h1 style={{ fontFamily: 'Playfair Display', fontSize: 32, marginBottom: 32 }}>Shopping Cart</h1>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 32 }}>
+      <div className="cart-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 32 }}>
         {/* Items */}
         <div>
           {cart.map((item) => (

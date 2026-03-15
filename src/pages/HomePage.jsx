@@ -19,7 +19,7 @@ export default function HomePage() {
   return (
     <div>
       {/* Hero */}
-      <section style={{ background: 'linear-gradient(135deg, var(--espresso) 0%, var(--brown-mid) 50%, #2d1a08 100%)', minHeight: '80vh', display: 'flex', alignItems: 'center', padding: '60px 24px', position: 'relative', overflow: 'hidden' }}>
+      <section style={{ background: 'linear-gradient(135deg, var(--espresso) 0%, var(--brown-mid) 50%, #2d1a08 100%)', minHeight: '80vh', display: 'flex', alignItems: 'center', padding: 'clamp(40px,8vw,80px) clamp(16px,5vw,24px)', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle at 70% 50%, rgba(201,151,58,0.15) 0%, transparent 60%)', pointerEvents: 'none' }} />
         <div className="hero-grid" style={{ maxWidth: 1200, margin: '0 auto', width: '100%', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, alignItems: 'center' }}>
           <div>
@@ -30,7 +30,7 @@ export default function HomePage() {
             <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.7)', lineHeight: 1.7, marginBottom: 32, maxWidth: 460 }}>
               Discover Lagos's finest collection of 100% human hair wigs and extensions. From sleek bobs to goddess curls — your perfect hair awaits.
             </p>
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <div className="hero-cta-btns" style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
               <button className="btn-primary" style={{ fontSize: 15, padding: '14px 32px' }} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'products' })}>Shop Collection</button>
               <button className="btn-outline" style={{ fontSize: 15, padding: '14px 32px', color: 'white', borderColor: 'rgba(255,255,255,0.4)' }} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'products' })}>View Lookbook</button>
             </div>
@@ -43,7 +43,7 @@ export default function HomePage() {
               ))}
             </div>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'center', position: 'relative' }}>
+          <div className="hide-mobile" style={{ display: 'flex', justifyContent: 'center', position: 'relative' }}>
             <div style={{ position: 'absolute', width: 320, height: 320, borderRadius: '50%', background: 'rgba(201,151,58,0.08)', top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }} />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               {HAIR_PRODUCTS.slice(0, 4).map((p) => (

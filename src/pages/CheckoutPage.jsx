@@ -2,12 +2,13 @@ import { useContext, useState } from 'react';
 import { AppContext } from '../context.jsx';
 import HairVisual from '../components/HairVisual.jsx';
 import { fmt } from '../data.js';
+import { insertOrder } from '../supabase.js';
 
-const deliveryOptions = [
-  { id: 'lagos', label: 'Lagos (Same Day / Next Day)', desc: 'Uber Algorithm Pricing', time: '3–12 hours', fee: 2500 },
-  { id: 'nigeria', label: 'Nigeria (GUO / GIGM Bus)', desc: 'GIGM/GUO Bus Delivery', time: '1–3 days', fee: 5000 },
-  { id: 'international', label: 'International (DHL)', desc: 'DHL Express + Duties', time: '5–10 days', fee: 35000 },
-];
+const DELIVERY_META = {
+  lagos:         { label: 'Lagos (Same Day / Next Day)', desc: 'Uber Algorithm Pricing', time: '3–12 hours' },
+  nigeria:       { label: 'Nigeria (GUO / GIGM Bus)',   desc: 'GIGM/GUO Bus Delivery',  time: '1–3 days'   },
+  international: { label: 'International (DHL)',         desc: 'DHL Express + Duties',   time: '5–10 days'  },
+};
 
 const payOptions = [
   { id: 'paystack', label: 'Paystack', desc: 'Nigerian debit/credit cards & bank transfer', flag: '🇳🇬' },
@@ -25,24 +26,90 @@ export default function CheckoutPage() {
   const [processing, setProcessing] = useState(false);
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
+  const deliveryOptions = Object.entries(DELIVERY_META).map(([id, meta]) => ({
+    id, ...meta, fee: state.delivery[id] ?? 0,
+  }));
+
   const subtotal = state.cart.reduce((s, i) => s + i.price * i.qty, 0);
   const service = Math.round(subtotal * 0.02);
   const deliveryFee = deliveryOptions.find((o) => o.id === delivery)?.fee || 0;
   const total = subtotal + service + deliveryFee;
 
+  const buildOrder = () => ({
+    id: `PHR-${Date.now()}`,
+    date: new Date().toISOString().split('T')[0],
+    items: state.cart,
+    total,
+    status: 0,
+    delivery,
+    tracking: `PHR${Math.floor(Math.random() * 9000000 + 1000000)}`,
+    customer: form,
+  });
+
+  const saveAndConfirm = async (order) => {
+    try {
+      if (state.user?.id) await insertOrder(order, state.user.id);
+    } catch (err) {
+      console.error('Failed to save order:', err);
+    }
+    dispatch({ type: 'PLACE_ORDER', payload: order });
+    dispatch({ type: 'SET_TOAST', payload: { msg: 'Order placed! Receipt sent to your email 📧', icon: '✅' } });
+    setProcessing(false);
+  };
+
   const placeOrder = () => {
+    if (!form.name || !form.email || !form.phone) {
+      dispatch({ type: 'SET_TOAST', payload: { msg: 'Please fill in your contact details first', icon: '⚠️' } });
+      return;
+    }
     setProcessing(true);
-    setTimeout(() => {
+    const order = buildOrder();
+
+    if (payMethod === 'paystack') {
+      const paystackKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
+      const handler = window.PaystackPop.setup({
+        key: paystackKey,
+        email: form.email,
+        amount: Math.round(total * 100), // kobo
+        currency: 'NGN',
+        ref: order.id,
+        metadata: { custom_fields: [{ display_name: 'Customer Name', variable_name: 'customer_name', value: form.name }] },
+        callback: () => saveAndConfirm(order),
+        onClose: () => setProcessing(false),
+      });
+      handler.openIframe();
+    } else if (payMethod === 'flutterwave') {
+      window.FlutterwaveCheckout({
+        public_key: import.meta.env.VITE_FLUTTERWAVE_PUBLIC_KEY,
+        tx_ref: order.id,
+        amount: total,
+        currency: 'NGN',
+        payment_options: 'card,banktransfer,ussd',
+        customer: { email: form.email, phone_number: form.phone, name: form.name },
+        customizations: { title: "Perry's Hairline", description: 'Hair products order', logo: '' },
+        callback: (response) => {
+          if (response.status === 'successful' || response.status === 'completed') {
+            saveAndConfirm(order);
+          } else {
+            setProcessing(false);
+          }
+        },
+        onclose: () => setProcessing(false),
+      });
+    } else if (payMethod === 'transfer') {
+      // Order saved immediately; awaits manual confirmation by admin
+      order.status = 0; // pending
+      saveAndConfirm(order);
+    } else {
       setProcessing(false);
-      dispatch({ type: 'PLACE_ORDER', payload: { total, delivery, customer: form } });
-      dispatch({ type: 'SET_TOAST', payload: { msg: 'Order placed! Receipt sent to your email 📧', icon: '✅' } });
-    }, 2000);
+      dispatch({ type: 'SET_TOAST', payload: { msg: 'Stripe requires a server-side setup — contact support', icon: '⚠️' } });
+    }
   };
 
   const stepLabels = ['Contact Info', 'Delivery', 'Payment'];
 
   return (
-    <div style={{ maxWidth: 960, margin: '0 auto', padding: '40px 24px' }}>
+    <div style={{ maxWidth: 960, margin: '0 auto', padding: 'clamp(24px,5vw,40px) clamp(16px,4vw,24px)' }}>
       <h1 style={{ fontFamily: 'Playfair Display', fontSize: 30, marginBottom: 8 }}>Checkout</h1>
 
       {/* Steps */}
@@ -62,7 +129,7 @@ export default function CheckoutPage() {
           {step === 1 && (
             <div className="card" style={{ padding: 28 }}>
               <h3 style={{ fontFamily: 'Playfair Display', fontSize: 18, marginBottom: 20 }}>Contact & Delivery Information</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16 }}>
                 {[['Full Name', 'name', 'text', 'Your full name'], ['Phone Number', 'phone', 'tel', '+234 XXX XXX XXXX'], ['Email', 'email', 'email', 'yourname@email.com'], ['Street Address', 'address', 'text', 'House/flat number, street']].map(([l, k, t, ph]) => (
                   <div key={k} style={{ gridColumn: k === 'address' ? '1/-1' : 'auto' }}>
                     <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-mid)', display: 'block', marginBottom: 6 }}>{l}</label>
@@ -139,18 +206,26 @@ export default function CheckoutPage() {
                 <div style={{ background: 'var(--warm-white)', border: '1px solid var(--border)', borderRadius: 8, padding: 16, marginBottom: 16 }}>
                   <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8 }}>Transfer Details</div>
                   <div style={{ fontSize: 13, color: 'var(--text-mid)', lineHeight: 1.8 }}>
-                    Bank: Guaranty Trust Bank<br />
-                    Account: 0123456789<br />
-                    Name: Perrys Hairline Ltd<br />
-                    Reference: PHR-{Date.now().toString().slice(-6)}
+                    Bank: {import.meta.env.VITE_BANK_NAME || 'Guaranty Trust Bank'}<br />
+                    Account: {import.meta.env.VITE_BANK_ACCOUNT || '0123456789'}<br />
+                    Name: {import.meta.env.VITE_BANK_ACCOUNT_NAME || 'Perrys Hairline Ltd'}<br />
+                    Reference: <strong style={{ color: 'var(--gold)' }}>PHR-{Date.now().toString().slice(-6)}</strong>
                   </div>
+                  <div style={{ marginTop: 10, fontSize: 12, color: 'var(--text-light)', padding: '8px 10px', background: 'rgba(201,151,58,0.08)', borderRadius: 6 }}>
+                    After transferring, click "Confirm Transfer" and your order will be held pending admin verification.
+                  </div>
+                </div>
+              )}
+              {payMethod === 'stripe' && (
+                <div style={{ background: '#fff8f0', border: '1px solid #f0d8b0', borderRadius: 8, padding: 14, marginBottom: 16, fontSize: 13, color: '#a07030' }}>
+                  Stripe is available for international cards. Ensure your Stripe publishable key is configured and a server-side Payment Intent endpoint is set up.
                 </div>
               )}
               <div style={{ display: 'flex', gap: 12 }}>
                 <button className="btn-outline" style={{ padding: '11px 24px' }} onClick={() => setStep(2)}>← Back</button>
                 <button className="btn-primary" style={{ padding: '12px 32px', opacity: processing ? 0.7 : 1 }}
                   onClick={placeOrder} disabled={processing}>
-                  {processing ? '⏳ Processing...' : `Pay ${fmt(total)}`}
+                  {processing ? '⏳ Processing...' : payMethod === 'transfer' ? `Confirm Transfer · ${fmt(total)}` : `Pay ${fmt(total)}`}
                 </button>
               </div>
             </div>

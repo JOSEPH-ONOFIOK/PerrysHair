@@ -1,31 +1,41 @@
 import { useContext, useState } from 'react';
 import { AppContext } from '../context.jsx';
+import { signIn, signUp, resetPassword } from '../supabase.js';
 
 export default function AuthModal() {
   const { state, dispatch } = useContext(AppContext);
   const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const mode = state.authMode;
 
-  const handle = () => {
+  const handle = async () => {
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    setError('');
+    try {
       if (mode === 'forgot') {
+        await resetPassword(form.email);
         dispatch({ type: 'SET_TOAST', payload: { msg: 'Reset link sent to your email!', icon: '📧' } });
         dispatch({ type: 'SET_AUTH_MODE', payload: 'login' });
-        return;
+      } else if (mode === 'signup') {
+        if (form.password !== form.confirm) {
+          setError('Passwords do not match');
+          setLoading(false);
+          return;
+        }
+        await signUp(form.email, form.password, form.name);
+        dispatch({ type: 'SET_TOAST', payload: { msg: 'Account created! Check your email to confirm.', icon: '✨' } });
+        dispatch({ type: 'SET_VIEW', payload: 'home' });
+      } else {
+        await signIn(form.email, form.password);
+        // Auth listener in context.jsx handles SET_USER
+        dispatch({ type: 'SET_VIEW', payload: 'home' });
       }
-      const user = {
-        name: form.name || form.email.split('@')[0],
-        email: form.email,
-        isAdmin: form.email.includes('admin'),
-      };
-      dispatch({ type: 'SET_USER', payload: user });
-      dispatch({ type: 'SET_VIEW', payload: 'home' });
-      dispatch({ type: 'SET_TOAST', payload: { msg: `Welcome${mode === 'signup' ? ' to Perrys Hairline' : ' back'}, ${user.name.split(' ')[0]}!`, icon: '✨' } });
-    }, 800);
+    } catch (err) {
+      setError(err.message || 'Something went wrong. Please try again.');
+    }
+    setLoading(false);
   };
 
   return (
@@ -69,6 +79,11 @@ export default function AuthModal() {
                 onClick={() => dispatch({ type: 'SET_AUTH_MODE', payload: 'forgot' })}>
                 Forgot password?
               </span>
+            </div>
+          )}
+          {error && (
+            <div style={{ background: '#fff0f0', border: '1px solid #f5c6cb', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#c0392b', marginBottom: 12 }}>
+              {error}
             </div>
           )}
           <button className="btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: 16, padding: '14px', fontSize: 15 }}

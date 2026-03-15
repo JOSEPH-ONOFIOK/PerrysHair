@@ -18,10 +18,10 @@ export default function ProductDetail() {
         ← Back to Shop
       </button>
 
-      <div className="product-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'start' }}>
+      <div className="product-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'clamp(24px,5vw,48px)', alignItems: 'start' }}>
         {/* Image */}
         <div>
-          <div style={{ background: 'linear-gradient(135deg, var(--blush), var(--cream))', borderRadius: 16, padding: 48, display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
+          <div style={{ background: 'linear-gradient(135deg, var(--blush), var(--cream))', borderRadius: 16, padding: 'clamp(24px,5vw,48px)', display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
             <HairVisual image={p.image} size={240} />
             {p.bestSeller && <span className="badge badge-gold" style={{ position: 'absolute', top: 16, left: 16 }}>Best Seller</span>}
           </div>

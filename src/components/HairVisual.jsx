@@ -88,6 +88,19 @@ const SHAPES = {
 };
 
 export default function HairVisual({ image, style = {}, size = 200 }) {
+  // If image is a real URL, render a photo instead of SVG
+  if (image && (image.startsWith('http') || image.startsWith('blob:'))) {
+    return (
+      <img
+        src={image}
+        alt="product"
+        width={size}
+        height={size}
+        style={{ objectFit: 'cover', borderRadius: 8, display: 'block', ...style }}
+      />
+    );
+  }
+
   const gradient = HAIR_GRADIENTS[image] || HAIR_GRADIENTS.straight1;
   const colors = gradient.match(/#[a-f0-9]+/gi) || ['#1a1008', '#080808'];
   const id = `hg-${image}-${size}`;

@@ -25,8 +25,8 @@ export default function AuthModal() {
           return;
         }
         await signUp(form.email, form.password, form.name);
-        dispatch({ type: 'SET_TOAST', payload: { msg: 'Account created! Check your email to confirm.', icon: '✨' } });
-        dispatch({ type: 'SET_VIEW', payload: 'home' });
+        localStorage.setItem('perrys_awaiting_confirm', '1');
+        dispatch({ type: 'SET_AUTH_MODE', payload: 'confirm-sent' });
       } else {
         await signIn(form.email, form.password);
         // Auth listener in context.jsx handles SET_USER
@@ -37,6 +37,28 @@ export default function AuthModal() {
     }
     setLoading(false);
   };
+
+  if (mode === 'confirm-sent') {
+    return (
+      <div className="modal-overlay" onClick={() => dispatch({ type: 'SET_VIEW', payload: 'home' })}>
+        <div className="modal-box" onClick={(e) => e.stopPropagation()} style={{ textAlign: 'center', padding: '48px 32px' }}>
+          <div style={{ fontSize: 60, marginBottom: 16 }}>📧</div>
+          <h2 style={{ fontFamily: 'Playfair Display', fontSize: 24, fontWeight: 700, marginBottom: 10 }}>Check your inbox</h2>
+          <p style={{ color: 'var(--text-light)', fontSize: 14, lineHeight: 1.7, marginBottom: 8 }}>
+            We sent a confirmation link to
+          </p>
+          <p style={{ fontWeight: 700, color: 'var(--espresso)', fontSize: 15, marginBottom: 20 }}>{form.email}</p>
+          <p style={{ color: 'var(--text-light)', fontSize: 13, lineHeight: 1.6, marginBottom: 28 }}>
+            Click the link in your email to complete your registration. Check your spam folder if you don't see it.
+          </p>
+          <button className="btn-primary" style={{ justifyContent: 'center' }}
+            onClick={() => dispatch({ type: 'SET_VIEW', payload: 'home' })}>
+            Back to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="modal-overlay" onClick={() => dispatch({ type: 'SET_VIEW', payload: 'home' })}>

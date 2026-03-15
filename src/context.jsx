@@ -118,6 +118,10 @@ export function AppProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         loadUser(session.user);
+        if (_event === 'SIGNED_IN' && localStorage.getItem('perrys_awaiting_confirm')) {
+          localStorage.removeItem('perrys_awaiting_confirm');
+          dispatch({ type: 'SET_TOAST', payload: { msg: 'Registration complete! Welcome to Perrys Hairline', icon: '✨' } });
+        }
       } else {
         dispatch({ type: 'LOGOUT' });
       }

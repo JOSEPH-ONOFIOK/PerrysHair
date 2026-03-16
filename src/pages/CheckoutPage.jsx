@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import { AppContext } from '../context.jsx';
 import HairVisual from '../components/HairVisual.jsx';
 import { fmt } from '../data.js';
@@ -25,6 +25,19 @@ export default function CheckoutPage() {
   const [payMethod, setPayMethod] = useState('paystack');
   const [processing, setProcessing] = useState(false);
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  useEffect(() => {
+    const load = (src) => {
+      if (!document.querySelector(`script[src="${src}"]`)) {
+        const s = document.createElement('script');
+        s.src = src;
+        document.head.appendChild(s);
+      }
+    };
+    load('https://js.paystack.co/v1/inline.js');
+    load('https://checkout.flutterwave.com/v3.js');
+    load('https://js.stripe.com/v3/');
+  }, []);
 
   const deliveryOptions = Object.entries(DELIVERY_META).map(([id, meta]) => ({
     id, ...meta, fee: state.delivery[id] ?? 0,

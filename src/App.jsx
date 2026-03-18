@@ -17,11 +17,27 @@ import OrderTracking from './pages/OrderTracking.jsx';
 import HistoryPage from './pages/HistoryPage.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
 
+const PAGE_TITLES = {
+  home:            "Perry's Hairline – Hair Store",
+  products:        "Shop – Perry's Hairline",
+  'product-detail':"Product – Perry's Hairline",
+  cart:            "Your Cart – Perry's Hairline",
+  checkout:        "Checkout – Perry's Hairline",
+  'order-tracking':"Order Tracking – Perry's Hairline",
+  history:         "My Orders – Perry's Hairline",
+  admin:           "Admin Dashboard – Perry's Hairline",
+  auth:            "Sign In – Perry's Hairline",
+};
+
 function AppInner() {
   const { state } = useContext(AppContext);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [state.view]);
+
+  useEffect(() => {
+    document.title = PAGE_TITLES[state.view] ?? "Perry's Hairline";
   }, [state.view]);
 
   const renderView = () => {

@@ -25,12 +25,13 @@ export default function Navbar() {
     }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64 }}>
         {/* Logo */}
-        <div
-          style={{ fontFamily: 'Playfair Display', fontSize: 22, fontWeight: 900, color: 'var(--espresso)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
+        <button
+          style={{ fontFamily: 'Playfair Display', fontSize: 22, fontWeight: 900, color: 'var(--espresso)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', padding: 0 }}
           onClick={() => navigate('home')}
+          aria-label="Perry's Hairline – go to home"
         >
-          <span style={{ fontSize: 20 }}>✦</span> Perrys Hairline
-        </div>
+          <span aria-hidden="true" style={{ fontSize: 20 }}>✦</span> Perrys Hairline
+        </button>
 
         {/* Desktop nav links */}
         <div className="hide-mobile" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -65,9 +66,10 @@ export default function Navbar() {
           {/* Cart button */}
           <button
             onClick={() => navigate('cart')}
+            aria-label={cartCount > 0 ? `Cart, ${cartCount} item${cartCount !== 1 ? 's' : ''}` : 'Cart'}
             style={{ position: 'relative', background: 'var(--espresso)', color: 'white', border: 'none', borderRadius: 8, padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, cursor: 'pointer' }}
           >
-            🛍️ <span className="hide-mobile">Cart</span>
+            <span aria-hidden="true">🛍️</span> <span className="hide-mobile">Cart</span>
             {cartCount > 0 && (
               <span style={{ position: 'absolute', top: -6, right: -6, background: 'var(--gold)', color: 'white', borderRadius: '50%', width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700 }}>
                 {cartCount}
@@ -81,6 +83,8 @@ export default function Navbar() {
             onClick={() => setMenuOpen((o) => !o)}
             style={{ background: 'none', border: 'none', padding: '6px', cursor: 'pointer', color: 'var(--espresso)', display: 'flex', flexDirection: 'column', gap: 5, alignItems: 'center', justifyContent: 'center' }}
             aria-label="Menu"
+            aria-expanded={menuOpen}
+            aria-controls="mobile-nav"
           >
             <span style={{ display: 'block', width: 22, height: 2, background: menuOpen ? 'var(--gold)' : 'var(--espresso)', borderRadius: 2, transition: 'transform 0.2s, opacity 0.2s', transform: menuOpen ? 'translateY(7px) rotate(45deg)' : 'none' }} />
             <span style={{ display: 'block', width: 22, height: 2, background: 'var(--espresso)', borderRadius: 2, transition: 'opacity 0.2s', opacity: menuOpen ? 0 : 1 }} />
@@ -91,7 +95,7 @@ export default function Navbar() {
 
       {/* Mobile dropdown menu */}
       {menuOpen && (
-        <div className="mobile-nav open" style={{ position: 'absolute', top: 64, left: 0, right: 0, background: 'rgba(253,240,245,0.98)', backdropFilter: 'blur(10px)', borderBottom: '1px solid var(--border)', padding: '12px 20px 20px', flexDirection: 'column', gap: 2, zIndex: 99 }}>
+        <div id="mobile-nav" role="navigation" aria-label="Mobile navigation" className="mobile-nav open" style={{ position: 'absolute', top: 64, left: 0, right: 0, background: 'rgba(253,240,245,0.98)', backdropFilter: 'blur(10px)', borderBottom: '1px solid var(--border)', padding: '12px 20px 20px', flexDirection: 'column', gap: 2, zIndex: 99 }}>
           {state.user && (
             <div style={{ padding: '10px 16px', fontSize: 14, fontWeight: 600, color: 'var(--text-mid)', marginBottom: 4 }}>
               Hi, {state.user.name.split(' ')[0]}

@@ -1,8 +1,22 @@
-import { useContext, useState, useEffect } from 'react';
+import { useContext, useState, useEffect, useRef } from 'react';
 import { AppContext } from '../context.jsx';
 import HairVisual from '../components/HairVisual.jsx';
-import { fmt } from '../data.js';
 import { insertOrder } from '../supabase.js';
+import { sendReceiptEmail } from '../email.js';
+
+const COUNTRY_CURRENCY = {
+  Nigeria:          { code: 'NGN', symbol: '₦' },
+  Ghana:            { code: 'GHS', symbol: 'GH₵' },
+  Kenya:            { code: 'KES', symbol: 'KSh' },
+  'South Africa':   { code: 'ZAR', symbol: 'R' },
+  'United Kingdom': { code: 'GBP', symbol: '£' },
+  'United States':  { code: 'USD', symbol: '$' },
+  Canada:           { code: 'CAD', symbol: 'CA$' },
+  Other:            { code: 'USD', symbol: '$' },
+};
+
+// Currencies Paystack can charge in (fall back to USD if not listed)
+const PAYSTACK_CURRENCIES = new Set(['NGN', 'USD', 'GHS', 'ZAR', 'KES']);
 
 const DELIVERY_META = {
   lagos:         { label: 'Lagos (Same Day / Next Day)', desc: 'Uber Algorithm Pricing', time: '3–12 hours' },
@@ -12,7 +26,6 @@ const DELIVERY_META = {
 
 const payOptions = [
   { id: 'paystack', label: 'Paystack', desc: 'Nigerian debit/credit cards & bank transfer', flag: '🇳🇬' },
-  { id: 'flutterwave', label: 'Flutterwave', desc: 'Cards, mobile money, bank transfer (Africa-wide)', flag: '🌍' },
   { id: 'stripe', label: 'Stripe', desc: 'International credit/debit cards (Visa, Mastercard, Amex)', flag: '🌐' },
   { id: 'transfer', label: 'Bank Transfer', desc: 'Direct bank transfer to Perrys Hairline account', flag: '🏦' },
 ];
@@ -24,20 +37,48 @@ export default function CheckoutPage() {
   const [delivery, setDelivery] = useState('lagos');
   const [payMethod, setPayMethod] = useState('paystack');
   const [processing, setProcessing] = useState(false);
+  const [rates, setRates] = useState({});
+  const payBtnRef = useRef(null);
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   useEffect(() => {
-    const load = (src) => {
-      if (!document.querySelector(`script[src="${src}"]`)) {
-        const s = document.createElement('script');
-        s.src = src;
-        document.head.appendChild(s);
-      }
-    };
-    load('https://js.paystack.co/v1/inline.js');
-    load('https://checkout.flutterwave.com/v3.js');
-    load('https://js.stripe.com/v3/');
+    fetch('https://open.er-api.com/v6/latest/NGN')
+      .then((r) => r.json())
+      .then((data) => { if (data.rates) setRates(data.rates); })
+      .catch(() => {});
   }, []);
+
+  const currency = COUNTRY_CURRENCY[form.country] || COUNTRY_CURRENCY.Other;
+  const rate = rates[currency.code] ?? (currency.code === 'NGN' ? 1 : null);
+  const converted = (ngnAmount) => (rate !== null ? ngnAmount * rate : ngnAmount);
+  const fmtLocal = (ngnAmount) => {
+    const amount = converted(ngnAmount);
+    try {
+      return new Intl.NumberFormat('en', {
+        style: 'currency', currency: currency.code,
+        minimumFractionDigits: 0, maximumFractionDigits: 2,
+      }).format(amount);
+    } catch {
+      return `${currency.symbol}${amount.toLocaleString()}`;
+    }
+  };
+  const payCurrency = PAYSTACK_CURRENCIES.has(currency.code) ? currency.code : 'USD';
+  const payRate     = (code) => rates[code] ?? (code === 'NGN' ? 1 : rates['USD'] ?? 1);
+
+  const SDK_URLS = {
+    paystack: 'https://js.paystack.co/v1/inline.js',
+    stripe: 'https://js.stripe.com/v3/',
+  };
+
+  useEffect(() => {
+    if (step !== 3) return;
+    const url = SDK_URLS[payMethod];
+    if (!url || document.querySelector(`script[src="${url}"]`)) return;
+    const s = document.createElement('script');
+    s.src = url;
+    s.crossOrigin = 'anonymous';
+    document.head.appendChild(s);
+  }, [step, payMethod]);
 
   const deliveryOptions = Object.entries(DELIVERY_META).map(([id, meta]) => ({
     id, ...meta, fee: state.delivery[id] ?? 0,
@@ -65,9 +106,38 @@ export default function CheckoutPage() {
     } catch (err) {
       console.error('Failed to save order:', err);
     }
+    sendReceiptEmail(order); // fire-and-forget
     dispatch({ type: 'PLACE_ORDER', payload: order });
     dispatch({ type: 'SET_TOAST', payload: { msg: 'Order placed! Receipt sent to your email 📧', icon: '✅' } });
     setProcessing(false);
+  };
+
+  const verifyAndConfirm = async (order, reference) => {
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-payment`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({ reference }),
+        }
+      );
+      const data = await res.json();
+      if (data.paid) {
+        await saveAndConfirm(order);
+      } else {
+        setProcessing(false);
+        payBtnRef.current?.focus();
+        dispatch({ type: 'SET_TOAST', payload: { msg: 'Payment could not be verified — please contact support', icon: '❌' } });
+      }
+    } catch {
+      setProcessing(false);
+      payBtnRef.current?.focus();
+      dispatch({ type: 'SET_TOAST', payload: { msg: 'Verification error — please contact support', icon: '❌' } });
+    }
   };
 
   const placeOrder = () => {
@@ -83,32 +153,14 @@ export default function CheckoutPage() {
       const handler = window.PaystackPop.setup({
         key: paystackKey,
         email: form.email,
-        amount: Math.round(total * 100), // kobo
-        currency: 'NGN',
+        amount: Math.round(total * payRate(payCurrency) * 100), // minor units
+        currency: payCurrency,
         ref: order.id,
         metadata: { custom_fields: [{ display_name: 'Customer Name', variable_name: 'customer_name', value: form.name }] },
-        callback: () => saveAndConfirm(order),
-        onClose: () => setProcessing(false),
+        callback: (transaction) => verifyAndConfirm(order, transaction?.reference || order.id),
+        onClose: () => { setProcessing(false); payBtnRef.current?.focus(); },
       });
       handler.openIframe();
-    } else if (payMethod === 'flutterwave') {
-      window.FlutterwaveCheckout({
-        public_key: import.meta.env.VITE_FLUTTERWAVE_PUBLIC_KEY,
-        tx_ref: order.id,
-        amount: total,
-        currency: 'NGN',
-        payment_options: 'card,banktransfer,ussd',
-        customer: { email: form.email, phone_number: form.phone, name: form.name },
-        customizations: { title: "Perry's Hairline", description: 'Hair products order', logo: '' },
-        callback: (response) => {
-          if (response.status === 'successful' || response.status === 'completed') {
-            saveAndConfirm(order);
-          } else {
-            setProcessing(false);
-          }
-        },
-        onclose: () => setProcessing(false),
-      });
     } else if (payMethod === 'transfer') {
       // Order saved immediately; awaits manual confirmation by admin
       order.status = 0; // pending
@@ -187,7 +239,7 @@ export default function CheckoutPage() {
                         <div style={{ fontSize: 12, color: 'var(--text-light)', marginTop: 2 }}>{opt.desc} • {opt.time}</div>
                       </div>
                     </div>
-                    <span style={{ fontWeight: 700, color: 'var(--gold)' }}>{fmt(opt.fee)}</span>
+                    <span style={{ fontWeight: 700, color: 'var(--gold)' }}>{fmtLocal(opt.fee)}</span>
                   </div>
                 </div>
               ))}
@@ -236,9 +288,9 @@ export default function CheckoutPage() {
               )}
               <div style={{ display: 'flex', gap: 12 }}>
                 <button className="btn-outline" style={{ padding: '11px 24px' }} onClick={() => setStep(2)}>← Back</button>
-                <button className="btn-primary" style={{ padding: '12px 32px', opacity: processing ? 0.7 : 1 }}
+                <button ref={payBtnRef} className="btn-primary" style={{ padding: '12px 32px', opacity: processing ? 0.7 : 1 }}
                   onClick={placeOrder} disabled={processing}>
-                  {processing ? '⏳ Processing...' : payMethod === 'transfer' ? `Confirm Transfer · ${fmt(total)}` : `Pay ${fmt(total)}`}
+                  {processing ? '⏳ Processing...' : payMethod === 'transfer' ? `Confirm Transfer · ${fmtLocal(total)}` : `Pay ${fmtLocal(total)}`}
                 </button>
               </div>
             </div>
@@ -248,7 +300,12 @@ export default function CheckoutPage() {
         {/* Order Summary */}
         <div>
           <div className="card" style={{ padding: 20, position: 'sticky', top: 80 }}>
-            <h3 style={{ fontFamily: 'Playfair Display', fontSize: 16, marginBottom: 16 }}>Order Summary</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 16 }}>
+              <h3 style={{ fontFamily: 'Playfair Display', fontSize: 16, margin: 0 }}>Order Summary</h3>
+              <span style={{ fontSize: 11, color: 'var(--text-light)', background: 'var(--border)', borderRadius: 4, padding: '2px 6px' }}>
+                {currency.code}{rate === null ? ' · loading…' : ''}
+              </span>
+            </div>
             {state.cart.map((i) => (
               <div key={i.id} style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 12 }}>
                 <div style={{ background: 'var(--blush)', borderRadius: 6, width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -258,17 +315,17 @@ export default function CheckoutPage() {
                   <div style={{ fontSize: 12, fontWeight: 600 }}>{i.name}</div>
                   <div style={{ fontSize: 11, color: 'var(--text-light)' }}>x{i.qty}</div>
                 </div>
-                <span style={{ fontWeight: 600, fontSize: 13 }}>{fmt(i.price * i.qty)}</span>
+                <span style={{ fontWeight: 600, fontSize: 13 }}>{fmtLocal(i.price * i.qty)}</span>
               </div>
             ))}
             <div style={{ height: 1, background: 'var(--border)', margin: '12px 0' }} />
-            {[['Subtotal', fmt(subtotal)], ['Service Fee (2%)', fmt(service)], ['Delivery', fmt(deliveryFee)]].map(([l, v]) => (
+            {[['Subtotal', fmtLocal(subtotal)], ['Service Fee (2%)', fmtLocal(service)], ['Delivery', fmtLocal(deliveryFee)]].map(([l, v]) => (
               <div key={l} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 8, color: 'var(--text-mid)' }}>
                 <span>{l}</span><span>{v}</span>
               </div>
             ))}
             <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: 16, marginTop: 8, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
-              <span>Total</span><span style={{ color: 'var(--gold)' }}>{fmt(total)}</span>
+              <span>Total</span><span style={{ color: 'var(--gold)' }}>{fmtLocal(total)}</span>
             </div>
           </div>
         </div>

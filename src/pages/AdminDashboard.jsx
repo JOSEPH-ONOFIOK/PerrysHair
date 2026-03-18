@@ -2,6 +2,7 @@ import { useContext, useState } from 'react';
 import { AppContext } from '../context.jsx';
 import { ORDER_STATUSES, CATEGORIES, HAIR_GRADIENTS, fmt } from '../data.js';
 import { insertProduct, updateProduct, deleteProduct, updateOrderStatus, saveDeliverySettings, uploadProductImage } from '../supabase.js';
+import { sendTrackingEmail } from '../email.js';
 
 const GRADIENT_KEYS = Object.keys(HAIR_GRADIENTS);
 
@@ -154,6 +155,7 @@ export default function AdminDashboard() {
                       try {
                         await updateOrderStatus(order.id, status);
                         dispatch({ type: 'UPDATE_ORDER_STATUS', payload: { id: order.id, status } });
+                        sendTrackingEmail(order, status); // fire-and-forget
                         dispatch({ type: 'SET_TOAST', payload: { msg: 'Status updated!', icon: '✅' } });
                       } catch {
                         dispatch({ type: 'SET_TOAST', payload: { msg: 'Failed to update status', icon: '❌' } });

@@ -1,0 +1,223 @@
+import nodemailer from 'nodemailer';
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASS,
+  },
+});
+
+const FROM = `"Perry's Hairline" <${process.env.GMAIL_USER}>`;
+
+const ORDER_STATUSES = [
+  'Order Placed', 'Payment Confirmed', 'Processing',
+  'Shipped', 'Out for Delivery', 'Delivered', 'Cancelled',
+];
+
+const fmt = (n) => `₦${Number(n).toLocaleString()}`;
+
+// ── Shared layout ─────────────────────────────────────────────────────────────
+const wrap = (content) => `
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f9f0f4;font-family:'Helvetica Neue',Arial,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9f0f4;padding:32px 0">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.08)">
+        <!-- Header -->
+        <tr><td style="background:linear-gradient(135deg,#3d1f1f,#6b3030);padding:32px 40px;text-align:center">
+          <div style="font-size:22px;color:#C9973A;letter-spacing:2px;font-weight:900">✦ PERRYS HAIRLINE</div>
+          <div style="font-size:12px;color:#e8cfc0;margin-top:4px;letter-spacing:1px">CROWN YOUR LOOK EVERY DAY</div>
+        </td></tr>
+        <!-- Body -->
+        <tr><td style="padding:36px 40px">
+          ${content}
+        </td></tr>
+        <!-- Footer -->
+        <tr><td style="background:#fdf0f5;padding:24px 40px;text-align:center;border-top:1px solid #f0dde6">
+          <p style="margin:0;font-size:12px;color:#999">© ${new Date().getFullYear()} Perry's Hairline. All rights reserved.</p>
+          <p style="margin:8px 0 0;font-size:12px;color:#bbb">You received this email because you have an account with us.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+const btn = (text, url) =>
+  `<a href="${url}" style="display:inline-block;background:#C9973A;color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:700;font-size:15px;margin:20px 0">${text}</a>`;
+
+const h1 = (text) =>
+  `<h1 style="font-size:26px;color:#3d1f1f;margin:0 0 16px;font-weight:900">${text}</h1>`;
+
+const p = (text) =>
+  `<p style="font-size:15px;color:#555;line-height:1.8;margin:0 0 12px">${text}</p>`;
+
+// ── Email builders ─────────────────────────────────────────────────────────────
+
+function welcomeEmail({ name, email }) {
+  return {
+    to: email,
+    subject: `Welcome to Perry's Hairline, ${name || 'Beautiful'}! 🌸`,
+    html: wrap(`
+      ${h1(`Welcome, ${name || 'Beautiful'}! 🌸`)}
+      ${p("We're so glad you joined the Perry's Hairline family. Your next crown is just a few clicks away.")}
+      ${p('Browse our collection of premium human hair wigs, lace fronts, and more — crafted to make you look and feel incredible.')}
+      <div style="text-align:center">${btn('Start Shopping', process.env.APP_URL || 'https://perrys-hair.vercel.app')}</div>
+      ${p("If you have any questions, just reply to this email — we're always here to help.")}
+      <p style="font-size:14px;color:#C9973A;font-weight:700;margin:16px 0 0">With love,<br>The Perry's Hairline Team ✦</p>
+    `),
+  };
+}
+
+function forgotPasswordEmail({ email, resetUrl }) {
+  return {
+    to: email,
+    subject: "Reset your Perry's Hairline password",
+    html: wrap(`
+      ${h1('Reset Your Password 🔐')}
+      ${p("We received a request to reset your password. Click the button below — this link expires in 1 hour.")}
+      <div style="text-align:center">${btn('Reset My Password', resetUrl)}</div>
+      ${p("If you didn't request this, you can safely ignore this email. Your password won't change.")}
+      <div style="background:#fdf0f5;border-radius:8px;padding:14px 18px;margin-top:16px">
+        <p style="font-size:12px;color:#999;margin:0">If the button doesn't work, copy this link:<br>
+        <a href="${resetUrl}" style="color:#C9973A;word-break:break-all;font-size:12px">${resetUrl}</a></p>
+      </div>
+    `),
+  };
+}
+
+function orderReceiptEmail({ order }) {
+  const items = (order.items || []).map((i) =>
+    `<tr>
+      <td style="padding:10px 0;border-bottom:1px solid #f5e8ee;font-size:14px;color:#333">${i.name} × ${i.qty}</td>
+      <td style="padding:10px 0;border-bottom:1px solid #f5e8ee;font-size:14px;color:#333;text-align:right;font-weight:700">${fmt(i.price * i.qty)}</td>
+    </tr>`
+  ).join('');
+
+  return {
+    to: order.customer?.email,
+    subject: `Order Confirmed — ${order.id} 🎉`,
+    html: wrap(`
+      ${h1('Your Order is Confirmed! 🎉')}
+      ${p(`Hi ${order.customer?.name || 'there'}, thank you for your order! We've received it and will start processing right away.`)}
+      <div style="background:#fdf0f5;border-radius:10px;padding:20px 24px;margin:20px 0">
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="font-size:13px;color:#999">Order ID</td>
+            <td style="font-size:13px;color:#3d1f1f;font-weight:700;text-align:right">${order.id}</td>
+          </tr>
+          <tr>
+            <td style="font-size:13px;color:#999;padding-top:6px">Tracking</td>
+            <td style="font-size:13px;color:#C9973A;font-weight:700;text-align:right;padding-top:6px">${order.tracking}</td>
+          </tr>
+          <tr>
+            <td style="font-size:13px;color:#999;padding-top:6px">Delivery</td>
+            <td style="font-size:13px;color:#3d1f1f;text-align:right;padding-top:6px;text-transform:capitalize">${order.delivery}</td>
+          </tr>
+        </table>
+      </div>
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0">
+        ${items}
+        <tr>
+          <td style="padding-top:14px;font-size:16px;font-weight:900;color:#3d1f1f">Total</td>
+          <td style="padding-top:14px;font-size:16px;font-weight:900;color:#C9973A;text-align:right">${fmt(order.total)}</td>
+        </tr>
+      </table>
+      ${order.customer?.address ? `${p(`<strong>Delivering to:</strong> ${order.customer.address}, ${order.customer.city || ''}`)}` : ''}
+      ${p("We'll send you another email as soon as your order ships. Track your order anytime from your account.")}
+    `),
+  };
+}
+
+function orderUpdateEmail({ order, status }) {
+  const statusIndex = typeof status === 'number' ? status : ORDER_STATUSES.indexOf(status);
+  const statusLabel = ORDER_STATUSES[statusIndex] || 'Updated';
+
+  const steps = ORDER_STATUSES.slice(0, 6).map((s, i) => {
+    const done = i <= statusIndex;
+    const active = i === statusIndex;
+    return `<tr>
+      <td style="padding:8px 0;vertical-align:middle">
+        <span style="display:inline-block;width:20px;height:20px;border-radius:50%;background:${done ? '#C9973A' : '#eee'};color:${done ? '#fff' : '#bbb'};font-size:11px;font-weight:700;text-align:center;line-height:20px;margin-right:12px">${done ? '✓' : (i + 1)}</span>
+        <span style="font-size:14px;color:${active ? '#C9973A' : done ? '#3d1f1f' : '#bbb'};font-weight:${active ? '700' : '400'}">${s}${active ? ' ← Current' : ''}</span>
+      </td>
+    </tr>`;
+  }).join('');
+
+  return {
+    to: order.customer?.email,
+    subject: `Order Update: ${statusLabel} — ${order.id}`,
+    html: wrap(`
+      ${h1(`Order ${statusLabel}`)}
+      ${p(`Hi ${order.customer?.name || 'there'}, here's an update on your order <strong>${order.id}</strong>.`)}
+      <div style="background:#fdf0f5;border-radius:10px;padding:20px 24px;margin:20px 0">
+        <table width="100%" cellpadding="0" cellspacing="0">${steps}</table>
+      </div>
+      ${p(`Your tracking number is <strong style="color:#C9973A">${order.tracking}</strong>.`)}
+      ${p("Thank you for shopping with Perry's Hairline!")}
+    `),
+  };
+}
+
+function cartReminderEmail({ name, email, items }) {
+  const itemList = items.map((i) =>
+    `<tr>
+      <td style="padding:8px 0;font-size:14px;color:#333;border-bottom:1px solid #f5e8ee">${i.product_name}</td>
+      <td style="padding:8px 0;font-size:14px;color:#C9973A;font-weight:700;text-align:right;border-bottom:1px solid #f5e8ee">${fmt(i.product_price)}</td>
+    </tr>`
+  ).join('');
+
+  return {
+    to: email,
+    subject: `You left something behind, ${name || 'beautiful'} 👀`,
+    html: wrap(`
+      ${h1('Your cart misses you! 💛')}
+      ${p(`Hi ${name || 'there'}, you left some gorgeous pieces in your cart. Don't let them get away!`)}
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0">${itemList}</table>
+      <div style="text-align:center">${btn('Complete My Order', process.env.APP_URL || 'https://perrys-hair.vercel.app')}</div>
+      ${p('Stock is limited — these beauties might not last long.')}
+    `),
+  };
+}
+
+// ── Rate limiting ──────────────────────────────────────────────────────────────
+const rateLimitMap = new Map();
+function isRateLimited(ip) {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+  if (!entry || now > entry.reset) { rateLimitMap.set(ip, { count: 1, reset: now + 60_000 }); return false; }
+  if (entry.count >= 10) return true;
+  entry.count++;
+  return false;
+}
+
+// ── Handler ───────────────────────────────────────────────────────────────────
+export default async function handler(req, res) {
+  if (req.method !== 'POST') return res.status(405).end();
+
+  const ip = req.headers['x-forwarded-for'] || 'unknown';
+  if (isRateLimited(ip)) return res.status(429).json({ error: 'Too many requests' });
+
+  const { type, ...data } = req.body;
+
+  try {
+    let config;
+    if (type === 'welcome')          config = welcomeEmail(data);
+    else if (type === 'forgot')      config = forgotPasswordEmail(data);
+    else if (type === 'receipt')     config = orderReceiptEmail(data);
+    else if (type === 'order-update') config = orderUpdateEmail(data);
+    else if (type === 'cart-reminder') config = cartReminderEmail(data);
+    else return res.status(400).json({ error: 'Unknown email type' });
+
+    if (!config.to) return res.status(400).json({ error: 'No recipient email' });
+
+    await transporter.sendMail({ from: FROM, ...config });
+    res.json({ sent: true });
+  } catch (err) {
+    console.error('[send-email]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+}

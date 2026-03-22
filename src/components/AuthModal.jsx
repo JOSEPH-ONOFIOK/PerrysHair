@@ -1,6 +1,7 @@
 import { useContext, useState } from 'react';
 import { AppContext } from '../context.jsx';
-import { signIn, signUp, resetPassword } from '../supabase.js';
+import { signIn, signUp } from '../supabase.js';
+import { sendWelcomeEmail, sendForgotPassword } from '../email.js';
 
 export default function AuthModal() {
   const { state, dispatch } = useContext(AppContext);
@@ -17,7 +18,18 @@ export default function AuthModal() {
     setError('');
     try {
       if (mode === 'forgot') {
-        await resetPassword(form.email);
+        // Generate reset link via Supabase, then send via our Nodemailer
+        const res = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/auth/v1/recover`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
+            body: JSON.stringify({ email: form.email }),
+          }
+        );
+        if (!res.ok) throw new Error('Could not send reset email');
+        // Also send our branded email (Supabase sends its own reset link too — we override with ours via the admin API in production)
+        sendForgotPassword(form.email, `${window.location.origin}/#reset`);
         dispatch({ type: 'SET_TOAST', payload: { msg: 'Reset link sent to your email!', icon: '📧' } });
         dispatch({ type: 'SET_AUTH_MODE', payload: 'login' });
       } else if (mode === 'signup') {
@@ -29,6 +41,7 @@ export default function AuthModal() {
         const data = await signUp(form.email, form.password, form.name);
         if (data.session) {
           // Email confirmation is OFF — user is logged in immediately
+          sendWelcomeEmail(form.name, form.email); // fire-and-forget
           dispatch({ type: 'SET_VIEW', payload: 'home' });
           dispatch({ type: 'SET_TOAST', payload: { msg: `Welcome to Perrys Hairline${form.name ? ', ' + form.name : ''}!`, icon: '🌸' } });
         } else {

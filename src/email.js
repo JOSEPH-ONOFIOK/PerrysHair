@@ -1,21 +1,18 @@
-const EDGE_BASE = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
-const ANON_KEY  = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const BASE = '/api/send-email';
 
-async function callEdge(fn, body) {
+async function callEmail(type, data) {
   try {
-    await fetch(`${EDGE_BASE}/${fn}`, {
+    await fetch(BASE, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${ANON_KEY}`,
-      },
-      body: JSON.stringify(body),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, ...data }),
     });
   } catch (err) {
-    // Email is best-effort — don't block the UI if it fails
-    console.error(`[email] ${fn} failed:`, err?.message ?? err);
+    console.error(`[email] ${type} failed:`, err?.message ?? err);
   }
 }
 
-export const sendReceiptEmail  = (order)         => callEdge('send-order-email', { type: 'receipt',  order });
-export const sendTrackingEmail = (order, status) => callEdge('send-order-email', { type: 'tracking', order, status });
+export const sendWelcomeEmail    = (name, email)       => callEmail('welcome', { name, email });
+export const sendReceiptEmail    = (order)             => callEmail('receipt', { order });
+export const sendTrackingEmail   = (order, status)     => callEmail('order-update', { order, status });
+export const sendForgotPassword  = (email, resetUrl)   => callEmail('forgot', { email, resetUrl });

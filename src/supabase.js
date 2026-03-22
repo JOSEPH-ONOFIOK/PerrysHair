@@ -286,9 +286,16 @@ export async function fetchCart(userId) {
 }
 
 export async function syncCart(userId, items) {
-  await supabase.from('cart_items').delete().eq('user_id', userId);
-  if (!items.length) return;
-  await supabase.from('cart_items').insert(
+  // Delete items no longer in cart
+  const keepIds = items.map((i) => i.id);
+  if (keepIds.length) {
+    await supabase.from('cart_items').delete().eq('user_id', userId).not('product_id', 'in', `(${keepIds.map((id) => `"${id}"`).join(',')})`);
+  } else {
+    await supabase.from('cart_items').delete().eq('user_id', userId);
+    return;
+  }
+  // Upsert current items — safe if insert fails partway through
+  await supabase.from('cart_items').upsert(
     items.map((i) => ({
       user_id: userId,
       product_id: i.id,
@@ -296,7 +303,8 @@ export async function syncCart(userId, items) {
       product_price: i.price,
       product_image: i.image || null,
       qty: i.qty,
-    }))
+    })),
+    { onConflict: 'user_id,product_id' }
   );
 }
 

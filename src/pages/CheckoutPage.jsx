@@ -1,7 +1,7 @@
 import { useContext, useState, useEffect, useRef } from 'react';
 import { AppContext } from '../context.jsx';
 import HairVisual from '../components/HairVisual.jsx';
-import { insertOrder, decrementStock } from '../supabase.js';
+import { supabase, insertOrder, decrementStock } from '../supabase.js';
 import { sendReceiptEmail } from '../email.js';
 
 const COUNTRY_CURRENCY = {
@@ -86,21 +86,40 @@ export default function CheckoutPage() {
   const deliveryFee = deliveryOptions.find((o) => o.id === delivery)?.fee || 0;
   const total = subtotal + service + deliveryFee;
 
-  const buildOrder = () => ({
-    id: `PHR-${Date.now()}`,
-    date: new Date().toISOString().split('T')[0],
-    items: state.cart,
-    total,
-    status: 0,
-    delivery,
-    tracking: `PHR${Math.floor(Math.random() * 9000000 + 1000000)}`,
-    customer: form,
-  });
+  const buildOrder = () => {
+    const rand = () => crypto.getRandomValues(new Uint32Array(1))[0].toString(36).toUpperCase();
+    return {
+      id: `PHR-${Date.now()}-${rand()}`,
+      date: new Date().toISOString().split('T')[0],
+      items: state.cart,
+      total,
+      status: 0,
+      delivery,
+      tracking: `PHR-${rand()}${rand()}`.slice(0, 12),
+      customer: form,
+    };
+  };
 
   const saveAndConfirm = async (order) => {
     try {
+      // Validate stock server-side before confirming
+      const { data: products } = await supabase
+        .from('products')
+        .select('id, name, stock')
+        .in('id', order.items.map((i) => i.id));
+
+      for (const item of order.items) {
+        const product = products?.find((p) => p.id === item.id);
+        if (!product || product.stock < item.qty) {
+          setProcessing(false);
+          payBtnRef.current?.focus();
+          dispatch({ type: 'SET_TOAST', payload: { msg: `"${product?.name || 'An item'}" is out of stock — please update your cart`, icon: '❌' } });
+          return;
+        }
+      }
+
       if (state.user?.id) await insertOrder(order, state.user.id);
-      decrementStock(order.items); // fire-and-forget, updates product stock
+      decrementStock(order.items);
     } catch (err) {
       console.error('Failed to save order:', err);
     }
@@ -112,6 +131,8 @@ export default function CheckoutPage() {
   };
 
   const verifyAndConfirm = async (order, reference) => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
     try {
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-payment`,
@@ -122,8 +143,10 @@ export default function CheckoutPage() {
             'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
           },
           body: JSON.stringify({ reference }),
+          signal: controller.signal,
         }
       );
+      clearTimeout(timeout);
       const data = await res.json();
       if (data.paid) {
         await saveAndConfirm(order);
@@ -132,16 +155,40 @@ export default function CheckoutPage() {
         payBtnRef.current?.focus();
         dispatch({ type: 'SET_TOAST', payload: { msg: 'Payment could not be verified — please contact support', icon: '❌' } });
       }
-    } catch {
+    } catch (err) {
+      clearTimeout(timeout);
       setProcessing(false);
       payBtnRef.current?.focus();
-      dispatch({ type: 'SET_TOAST', payload: { msg: 'Verification error — please contact support', icon: '❌' } });
+      const msg = err.name === 'AbortError'
+        ? 'Verification timed out — please contact support'
+        : 'Verification error — please contact support';
+      dispatch({ type: 'SET_TOAST', payload: { msg, icon: '❌' } });
     }
   };
 
   const placeOrder = () => {
-    if (!form.name || !form.email || !form.phone) {
-      dispatch({ type: 'SET_TOAST', payload: { msg: 'Please fill in your contact details first', icon: '⚠️' } });
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email);
+    const phoneOk = /^[\d\+\-\s()]{7,20}$/.test(form.phone);
+    const validCountries = ['Nigeria','Ghana','Kenya','South Africa','United Kingdom','United States','Canada','Other'];
+
+    if (!form.name.trim() || !form.email || !form.phone) {
+      dispatch({ type: 'SET_TOAST', payload: { msg: 'Please fill in your contact details', icon: '⚠️' } });
+      return;
+    }
+    if (!emailOk) {
+      dispatch({ type: 'SET_TOAST', payload: { msg: 'Please enter a valid email address', icon: '⚠️' } });
+      return;
+    }
+    if (!phoneOk) {
+      dispatch({ type: 'SET_TOAST', payload: { msg: 'Please enter a valid phone number', icon: '⚠️' } });
+      return;
+    }
+    if (form.address.length > 200 || form.city.length > 50 || form.state.length > 50) {
+      dispatch({ type: 'SET_TOAST', payload: { msg: 'Address fields are too long', icon: '⚠️' } });
+      return;
+    }
+    if (!validCountries.includes(form.country)) {
+      dispatch({ type: 'SET_TOAST', payload: { msg: 'Please select a valid country', icon: '⚠️' } });
       return;
     }
     setProcessing(true);

@@ -184,11 +184,17 @@ export function AppProvider({ children }) {
   }
 
   // Sync cart to DB whenever it changes (logged-in users only)
+  // Debounced to prevent race conditions on rapid cart updates
   const cartInitialized = useRef(false);
+  const cartSyncTimeout = useRef(null);
   useEffect(() => {
     if (!cartInitialized.current) { cartInitialized.current = true; return; }
     if (!state.user?.id) return;
-    syncCart(state.user.id, state.cart);
+    if (cartSyncTimeout.current) clearTimeout(cartSyncTimeout.current);
+    cartSyncTimeout.current = setTimeout(() => {
+      syncCart(state.user.id, state.cart);
+    }, 500);
+    return () => clearTimeout(cartSyncTimeout.current);
   }, [state.cart, state.user?.id]);
 
   return (

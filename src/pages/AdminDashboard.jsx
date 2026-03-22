@@ -89,7 +89,7 @@ export default function AdminDashboard() {
       <div style={{ textAlign: 'center', padding: '80px 24px' }}>
         <div style={{ fontSize: 60, marginBottom: 12 }}>🔒</div>
         <h2 style={{ fontFamily: 'Playfair Display', fontSize: 22 }}>Admin Access Only</h2>
-        <p style={{ color: 'var(--text-light)', marginTop: 8 }}>Sign in with an email containing "admin" to access this panel.</p>
+        <p style={{ color: 'var(--text-light)', marginTop: 8 }}>Your account does not have admin access. Contact the store owner to be granted admin rights.</p>
       </div>
     );
 

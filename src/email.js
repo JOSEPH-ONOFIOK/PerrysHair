@@ -11,8 +11,9 @@ async function callEdge(fn, body) {
       },
       body: JSON.stringify(body),
     });
-  } catch {
+  } catch (err) {
     // Email is best-effort — don't block the UI if it fails
+    console.error(`[email] ${fn} failed:`, err?.message ?? err);
   }
 }
 

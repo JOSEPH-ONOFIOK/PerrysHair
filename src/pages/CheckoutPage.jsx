@@ -102,14 +102,20 @@ export default function CheckoutPage() {
 
   const saveAndConfirm = async (order) => {
     try {
-      // Validate stock server-side before confirming
+      // Validate items exist and have sufficient stock
       const { data: products } = await supabase
         .from('products')
         .select('id, name, stock')
         .in('id', order.items.map((i) => i.id));
 
+      if (!products || products.length !== order.items.length) {
+        setProcessing(false);
+        payBtnRef.current?.focus();
+        dispatch({ type: 'SET_TOAST', payload: { msg: 'Some items in your cart are no longer available — please update your cart', icon: '❌' } });
+        return;
+      }
       for (const item of order.items) {
-        const product = products?.find((p) => p.id === item.id);
+        const product = products.find((p) => p.id === item.id);
         if (!product || product.stock < item.qty) {
           setProcessing(false);
           payBtnRef.current?.focus();
@@ -352,18 +358,25 @@ export default function CheckoutPage() {
                 {currency.code}{rate === null ? ' · loading…' : ''}
               </span>
             </div>
-            {state.cart.map((i) => (
-              <div key={i.id} style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 12 }}>
-                <div style={{ background: 'var(--blush)', borderRadius: 6, width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <HairVisual image={i.image} size={34} />
+            {state.cart.map((i) => {
+              const liveProduct = state.products.find((p) => p.id === i.id);
+              const lowStock = liveProduct && liveProduct.stock > 0 && liveProduct.stock < i.qty;
+              const outOfStock = liveProduct && liveProduct.stock === 0;
+              return (
+                <div key={i.id} style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 12 }}>
+                  <div style={{ background: 'var(--blush)', borderRadius: 6, width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <HairVisual image={i.image} size={34} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600 }}>{i.name}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-light)' }}>x{i.qty}</div>
+                    {outOfStock && <div style={{ fontSize: 10, color: '#cc3333', fontWeight: 600 }}>Out of stock</div>}
+                    {lowStock && <div style={{ fontSize: 10, color: '#b06000', fontWeight: 600 }}>Only {liveProduct.stock} left</div>}
+                  </div>
+                  <span style={{ fontWeight: 600, fontSize: 13 }}>{fmtLocal(i.price * i.qty)}</span>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 12, fontWeight: 600 }}>{i.name}</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-light)' }}>x{i.qty}</div>
-                </div>
-                <span style={{ fontWeight: 600, fontSize: 13 }}>{fmtLocal(i.price * i.qty)}</span>
-              </div>
-            ))}
+              );
+            })}
             <div style={{ height: 1, background: 'var(--border)', margin: '12px 0' }} />
             {[['Subtotal', fmtLocal(subtotal)], ['Service Fee (2%)', fmtLocal(service)], ['Delivery', fmtLocal(deliveryFee)]].map(([l, v]) => (
               <div key={l} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 8, color: 'var(--text-mid)' }}>

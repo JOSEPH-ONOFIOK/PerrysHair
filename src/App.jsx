@@ -54,6 +54,32 @@ function AppInner() {
     }
   };
 
+  if (state.loading) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--cream)' }}>
+        <GlobalStyles />
+        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 24px' }}>
+          {/* Skeleton navbar */}
+          <div style={{ height: 64, background: 'rgba(253,240,245,0.96)', marginBottom: 40, borderRadius: 8 }} />
+          {/* Skeleton product cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 24 }}>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} style={{ borderRadius: 12, overflow: 'hidden', background: 'white', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                <div style={{ height: 200, background: 'linear-gradient(90deg, #f0e8ed 25%, #fdf0f5 50%, #f0e8ed 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.4s infinite' }} />
+                <div style={{ padding: 18 }}>
+                  <div style={{ height: 12, borderRadius: 6, background: '#f0e8ed', marginBottom: 10, width: '60%' }} />
+                  <div style={{ height: 18, borderRadius: 6, background: '#f0e8ed', marginBottom: 10 }} />
+                  <div style={{ height: 12, borderRadius: 6, background: '#f0e8ed', width: '40%' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <style>{`@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }`}</style>
+      </div>
+    );
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--cream)' }}>
       <GlobalStyles />

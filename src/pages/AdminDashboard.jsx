@@ -474,28 +474,49 @@ export default function AdminDashboard() {
       )}
 
       {/* Customers tab */}
-      {tab === 'customers' && (
-        <div>
-          <div className="card" style={{ padding: 20, marginBottom: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-                <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--blush)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>👤</div>
-                <div>
-                  <div style={{ fontWeight: 700 }}>{state.user.name}</div>
-                  <div style={{ fontSize: 13, color: 'var(--text-light)' }}>{state.user.email}</div>
-                </div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontWeight: 700, color: 'var(--gold)' }}>{fmt(state.orders.reduce((s, o) => s + o.total, 0))}</div>
-                <div style={{ fontSize: 12, color: 'var(--text-light)' }}>{state.orders.length} orders</div>
+      {tab === 'customers' && (() => {
+        // Aggregate unique customers from orders
+        const customerMap = {};
+        state.orders.forEach((o) => {
+          if (!o.customer?.email) return;
+          const key = o.customer.email;
+          if (!customerMap[key]) customerMap[key] = { name: o.customer.name, email: key, orders: 0, spent: 0 };
+          customerMap[key].orders++;
+          customerMap[key].spent += o.total;
+        });
+        const customers = Object.values(customerMap).sort((a, b) => b.spent - a.spent);
+        return (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h3 style={{ fontFamily: 'Playfair Display', fontSize: 17 }}>Customers ({customers.length})</h3>
+              <div style={{ fontSize: 13, color: 'var(--text-light)' }}>
+                Total revenue: <strong style={{ color: 'var(--gold)' }}>{fmt(customers.reduce((s, c) => s + c.spent, 0))}</strong>
               </div>
             </div>
+            {customers.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-light)', fontSize: 14 }}>
+                No customer orders yet
+              </div>
+            ) : customers.map((c) => (
+              <div key={c.email} className="card" style={{ padding: '16px 20px', marginBottom: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--blush)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>👤</div>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 14 }}>{c.name}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-light)' }}>{c.email}</div>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontWeight: 700, color: 'var(--gold)', fontSize: 14 }}>{fmt(c.spent)}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-light)' }}>{c.orders} order{c.orders !== 1 ? 's' : ''}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-          <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-light)', fontSize: 14 }}>
-            More customers will appear here as they sign up
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Delivery Pricing tab */}
       {tab === 'delivery' && (

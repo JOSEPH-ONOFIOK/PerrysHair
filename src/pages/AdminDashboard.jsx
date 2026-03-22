@@ -1,7 +1,7 @@
 import { useContext, useState } from 'react';
 import { AppContext } from '../context.jsx';
 import { ORDER_STATUSES, CATEGORIES, HAIR_GRADIENTS, fmt } from '../data.js';
-import { insertProduct, updateProduct, deleteProduct, updateOrderStatus, deleteOrder, fetchOrders, saveDeliverySettings, uploadProductImage } from '../supabase.js';
+import { insertProduct, updateProduct, deleteProduct, updateOrderStatus, deleteOrder, fetchOrders, saveDeliverySettings, saveBankDetails, uploadProductImage } from '../supabase.js';
 import { sendTrackingEmail } from '../email.js';
 
 const GRADIENT_KEYS = Object.keys(HAIR_GRADIENTS);
@@ -21,6 +21,8 @@ export default function AdminDashboard() {
   const [priceForm, setPriceForm] = useState({ price: '', originalPrice: '' });
   const [deliveryForm, setDeliveryForm] = useState(null);
   const [deliverySaving, setDeliverySaving] = useState(false);
+  const [bankForm, setBankForm] = useState(null);
+  const [bankSaving, setBankSaving] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -578,6 +580,51 @@ export default function AdminDashboard() {
               >{deliverySaving ? 'Saving...' : 'Save Delivery Prices'}</button>
               {deliveryForm && (
                 <button className="tab-btn" style={{ padding: '10px 18px' }} onClick={() => setDeliveryForm(null)}>Reset</button>
+              )}
+            </div>
+          </div>
+
+          {/* Bank Details */}
+          <div className="card" style={{ padding: 28, maxWidth: 520, marginTop: 24 }}>
+            <h3 style={{ fontFamily: 'Playfair Display', fontSize: 17, marginBottom: 6 }}>Bank Transfer Details</h3>
+            <p style={{ fontSize: 13, color: 'var(--text-light)', marginBottom: 24 }}>
+              Shown to customers who choose Bank Transfer at checkout.
+            </p>
+            {[
+              { key: 'bank_name', label: 'Bank Name', placeholder: 'e.g. Guaranty Trust Bank' },
+              { key: 'bank_account', label: 'Account Number', placeholder: 'e.g. 0123456789' },
+              { key: 'bank_account_name', label: 'Account Name', placeholder: 'e.g. Perrys Hairline Ltd' },
+            ].map(({ key, label, placeholder }) => (
+              <div key={key} style={{ marginBottom: 16 }}>
+                <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>{label}</label>
+                <input
+                  className="input-field"
+                  placeholder={placeholder}
+                  value={bankForm?.[key] ?? state.bank[key] ?? ''}
+                  onChange={(e) => setBankForm((f) => ({ ...(f ?? state.bank), [key]: e.target.value }))}
+                />
+              </div>
+            ))}
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                className="btn-primary"
+                style={{ padding: '10px 24px', opacity: bankSaving ? 0.7 : 1 }}
+                disabled={bankSaving || !bankForm}
+                onClick={async () => {
+                  setBankSaving(true);
+                  try {
+                    await saveBankDetails(bankForm);
+                    dispatch({ type: 'SET_BANK', payload: bankForm });
+                    dispatch({ type: 'SET_TOAST', payload: { msg: 'Bank details updated!', icon: '🏦' } });
+                    setBankForm(null);
+                  } catch {
+                    dispatch({ type: 'SET_TOAST', payload: { msg: 'Failed to save bank details', icon: '❌' } });
+                  }
+                  setBankSaving(false);
+                }}
+              >{bankSaving ? 'Saving...' : 'Save Bank Details'}</button>
+              {bankForm && (
+                <button className="tab-btn" style={{ padding: '10px 18px' }} onClick={() => setBankForm(null)}>Reset</button>
               )}
             </div>
           </div>

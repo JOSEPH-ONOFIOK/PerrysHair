@@ -328,9 +328,9 @@ export default function CheckoutPage() {
                 <div style={{ background: 'var(--warm-white)', border: '1px solid var(--border)', borderRadius: 8, padding: 16, marginBottom: 16 }}>
                   <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8 }}>Transfer Details</div>
                   <div style={{ fontSize: 13, color: 'var(--text-mid)', lineHeight: 1.8 }}>
-                    Bank: {import.meta.env.VITE_BANK_NAME || 'Guaranty Trust Bank'}<br />
-                    Account: {import.meta.env.VITE_BANK_ACCOUNT || '0123456789'}<br />
-                    Name: {import.meta.env.VITE_BANK_ACCOUNT_NAME || 'Perrys Hairline Ltd'}<br />
+                    Bank: {state.bank.bank_name}<br />
+                    Account: {state.bank.bank_account}<br />
+                    Name: {state.bank.bank_account_name}<br />
                     Reference: <strong style={{ color: 'var(--gold)' }}>PHR-{Date.now().toString().slice(-6)}</strong>
                   </div>
                   <div style={{ marginTop: 10, fontSize: 12, color: 'var(--text-light)', padding: '8px 10px', background: 'rgba(201,151,58,0.08)', borderRadius: 6 }}>

@@ -231,6 +231,28 @@ export async function fetchDeliverySettings() {
   return result;
 }
 
+export const DEFAULT_BANK = {
+  bank_name: 'Guaranty Trust Bank',
+  bank_account: '0000000000',
+  bank_account_name: 'Perrys Hairline Ltd',
+};
+
+export async function fetchBankDetails() {
+  const { data, error } = await supabase.from('settings').select('*');
+  if (error) return DEFAULT_BANK;
+  const result = { ...DEFAULT_BANK };
+  data.forEach(({ key, value }) => {
+    if (key in result) result[key] = value;
+  });
+  return result;
+}
+
+export async function saveBankDetails(details) {
+  const rows = Object.entries(details).map(([key, value]) => ({ key, value }));
+  const { error } = await supabase.from('settings').upsert(rows, { onConflict: 'key' });
+  if (error) throw error;
+}
+
 export async function saveDeliverySettings(fees) {
   const rows = Object.entries(fees).map(([key, value]) => ({ key, value: String(value) }));
   const { error } = await supabase

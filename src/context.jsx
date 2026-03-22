@@ -1,5 +1,5 @@
 import { createContext, useReducer, useEffect, useRef } from 'react';
-import { supabase, fetchProducts, fetchOrders, fetchProfile, fetchDeliverySettings, fetchCart, syncCart, DEFAULT_DELIVERY } from './supabase.js';
+import { supabase, fetchProducts, fetchOrders, fetchProfile, fetchDeliverySettings, fetchBankDetails, fetchCart, syncCart, DEFAULT_DELIVERY, DEFAULT_BANK } from './supabase.js';
 
 export const AppContext = createContext(null);
 
@@ -9,6 +9,7 @@ const initialState = {
   orders: [],
   products: [],
   delivery: DEFAULT_DELIVERY,
+  bank: DEFAULT_BANK,
   view: 'home',
   selectedProduct: null,
   selectedOrder: null,
@@ -34,6 +35,8 @@ function reducer(state, action) {
       return { ...state, loading: action.payload };
     case 'SET_DELIVERY':
       return { ...state, delivery: action.payload };
+    case 'SET_BANK':
+      return { ...state, bank: action.payload };
     case 'ADD_TO_CART': {
       const exists = state.cart.find((i) => i.id === action.payload.id);
       if (exists)
@@ -125,6 +128,7 @@ export function AppProvider({ children }) {
   // Load products and delivery settings on mount
   useEffect(() => {
     fetchDeliverySettings().then((fees) => dispatch({ type: 'SET_DELIVERY', payload: fees }));
+    fetchBankDetails().then((bank) => dispatch({ type: 'SET_BANK', payload: bank }));
     fetchProducts()
       .then((products) => dispatch({ type: 'SET_PRODUCTS', payload: products }))
       .catch(() => dispatch({ type: 'SET_LOADING', payload: false }));

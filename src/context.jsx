@@ -105,6 +105,8 @@ function reducer(state, action) {
             : p
         ),
       };
+    case 'DELETE_ORDER':
+      return { ...state, orders: state.orders.filter((o) => o.id !== action.payload) };
     case 'UPDATE_ORDER_STATUS':
       return {
         ...state,

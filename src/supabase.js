@@ -206,6 +206,11 @@ export async function updateOrderStatus(orderId, status) {
   if (error) throw error;
 }
 
+export async function deleteOrder(orderId) {
+  const { error } = await supabase.from('orders').delete().eq('id', orderId);
+  if (error) throw error;
+}
+
 // ── Delivery Settings ─────────────────────────────────────────────────────────
 
 export const DEFAULT_DELIVERY = {

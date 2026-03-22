@@ -55,7 +55,7 @@ const GlobalStyles = () => (
 
     .input-field {
       width: 100%; padding: 12px 16px; border: 1.5px solid var(--border); border-radius: 6px;
-      background: white; font-size: 14px; color: var(--text-dark); transition: border-color 0.2s;
+      background: white; font-size: 16px; color: var(--text-dark); transition: border-color 0.2s;
     }
     .input-field:focus { border-color: var(--gold); }
     .input-field::placeholder { color: var(--text-light); }

@@ -1,7 +1,7 @@
 import { useContext, useState } from 'react';
 import { AppContext } from '../context.jsx';
 import { ORDER_STATUSES, CATEGORIES, HAIR_GRADIENTS, fmt } from '../data.js';
-import { insertProduct, updateProduct, deleteProduct, updateOrderStatus, saveDeliverySettings, uploadProductImage } from '../supabase.js';
+import { insertProduct, updateProduct, deleteProduct, updateOrderStatus, deleteOrder, saveDeliverySettings, uploadProductImage } from '../supabase.js';
 import { sendTrackingEmail } from '../email.js';
 
 const GRADIENT_KEYS = Object.keys(HAIR_GRADIENTS);
@@ -24,6 +24,7 @@ export default function AdminDashboard() {
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [confirmDeleteOrder, setConfirmDeleteOrder] = useState(null); // order object to delete
 
   function handleFormChange(e) {
     const { name, value, type, checked } = e.target;
@@ -172,28 +173,106 @@ export default function AdminDashboard() {
       )}
 
       {/* History tab */}
-      {tab === 'history' && (
-        <div>
-          <div className="admin-history-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
-            {[['Lagos Orders', lagosOrders], ['National Orders', nigOrders], ['International Orders', intlOrders]].map(([title, orders]) => (
-              <div key={title} className="card" style={{ padding: 20 }}>
-                <h3 style={{ fontFamily: 'Playfair Display', fontSize: 15, marginBottom: 12 }}>{title}</h3>
-                <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--gold)' }}>{orders.length}</div>
-                <div style={{ fontSize: 13, color: 'var(--text-light)', marginTop: 4 }}>Total: {fmt(orders.reduce((s, o) => s + o.total, 0))}</div>
+      {tab === 'history' && (() => {
+        // Timeline: group orders by month
+        const byMonth = {};
+        state.orders.forEach((o) => {
+          const key = o.date?.slice(0, 7) || 'Unknown';
+          if (!byMonth[key]) byMonth[key] = { count: 0, revenue: 0 };
+          byMonth[key].count++;
+          byMonth[key].revenue += o.total;
+        });
+        const months = Object.entries(byMonth).sort(([a], [b]) => a.localeCompare(b));
+        const maxCount = Math.max(...months.map(([, v]) => v.count), 1);
+
+        // CSV download
+        const downloadCSV = () => {
+          const rows = [
+            ['Order ID', 'Date', 'Customer', 'Email', 'Delivery', 'Status', 'Total (₦)', 'Items'],
+            ...state.orders.map((o) => [
+              o.id, o.date,
+              o.customer?.name || '', o.customer?.email || '',
+              o.delivery, ORDER_STATUSES[o.status],
+              o.total,
+              (o.items || []).map((i) => `${i.name} x${i.qty}`).join('; '),
+            ]),
+          ];
+          const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+          a.download = `perrys-orders-${new Date().toISOString().slice(0, 10)}.csv`;
+          a.click();
+        };
+
+        return (
+          <div>
+            {/* Header row */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h3 style={{ fontFamily: 'Playfair Display', fontSize: 17 }}>Order History ({state.orders.length})</h3>
+              <button className="btn-outline" style={{ fontSize: 13, padding: '8px 18px', display: 'flex', alignItems: 'center', gap: 6 }} onClick={downloadCSV}>
+                ⬇ Download CSV
+              </button>
+            </div>
+
+            {/* Zone summary cards */}
+            <div className="admin-history-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
+              {[['Lagos Orders', lagosOrders], ['National Orders', nigOrders], ['International Orders', intlOrders]].map(([title, orders]) => (
+                <div key={title} className="card" style={{ padding: 20 }}>
+                  <h3 style={{ fontFamily: 'Playfair Display', fontSize: 15, marginBottom: 12 }}>{title}</h3>
+                  <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--gold)' }}>{orders.length}</div>
+                  <div style={{ fontSize: 13, color: 'var(--text-light)', marginTop: 4 }}>Total: {fmt(orders.reduce((s, o) => s + o.total, 0))}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Timeline chart */}
+            {months.length > 0 && (
+              <div className="card" style={{ padding: 24, marginBottom: 24 }}>
+                <h3 style={{ fontFamily: 'Playfair Display', fontSize: 15, marginBottom: 20 }}>Orders by Month</h3>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, overflowX: 'auto', paddingBottom: 8, minHeight: 120 }}>
+                  {months.map(([month, { count, revenue }]) => (
+                    <div key={month} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, minWidth: 52 }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--gold)' }}>{count}</span>
+                      <div
+                        title={`${count} orders · ${fmt(revenue)}`}
+                        style={{
+                          width: 36, borderRadius: '6px 6px 0 0',
+                          background: 'linear-gradient(180deg, var(--gold), #b8882a)',
+                          height: Math.max(12, (count / maxCount) * 90),
+                          transition: 'height 0.3s',
+                        }}
+                      />
+                      <span style={{ fontSize: 10, color: 'var(--text-light)', whiteSpace: 'nowrap' }}>
+                        {new Date(month + '-01').toLocaleDateString('en-GB', { month: 'short', year: '2-digit' })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Order rows */}
+            {state.orders.map((order) => (
+              <div key={order.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', background: 'white', borderRadius: 8, marginBottom: 8, border: '1px solid var(--border)', flexWrap: 'wrap', gap: 8 }}>
+                <div style={{ minWidth: 0 }}>
+                  <span style={{ fontWeight: 600, fontSize: 14 }}>{order.id}</span>
+                  {order.customer && <div style={{ fontSize: 12, color: 'var(--text-light)' }}>{order.customer.name}</div>}
+                </div>
+                <span style={{ fontSize: 13, color: 'var(--text-light)' }}>{order.date}</span>
+                <span className="badge badge-blush">{order.delivery}</span>
+                <span style={{ fontWeight: 700, color: 'var(--gold)' }}>{fmt(order.total)}</span>
+                <span className={`badge ${order.status >= 5 ? 'badge-green' : 'badge-gold'}`}>{ORDER_STATUSES[order.status]}</span>
+                <button
+                  onClick={() => setConfirmDeleteOrder(order)}
+                  style={{ background: 'none', border: '1px solid #ffcccc', borderRadius: 6, color: '#cc3333', fontSize: 12, padding: '4px 10px', cursor: 'pointer' }}
+                >
+                  Delete
+                </button>
               </div>
             ))}
           </div>
-          {state.orders.map((order) => (
-            <div key={order.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 20px', background: 'white', borderRadius: 8, marginBottom: 8, border: '1px solid var(--border)', flexWrap: 'wrap', gap: 8 }}>
-              <span style={{ fontWeight: 600, fontSize: 14 }}>{order.id}</span>
-              <span style={{ fontSize: 13, color: 'var(--text-light)' }}>{order.date}</span>
-              <span className="badge badge-blush">{order.delivery}</span>
-              <span style={{ fontWeight: 700, color: 'var(--gold)' }}>{fmt(order.total)}</span>
-              <span className={`badge ${order.status >= 5 ? 'badge-green' : 'badge-gold'}`}>{ORDER_STATUSES[order.status]}</span>
-            </div>
-          ))}
-        </div>
-      )}
+        );
+      })()}
 
       {/* Products tab */}
       {tab === 'products' && (
@@ -479,6 +558,44 @@ export default function AdminDashboard() {
               {deliveryForm && (
                 <button className="tab-btn" style={{ padding: '10px 18px' }} onClick={() => setDeliveryForm(null)}>Reset</button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete order confirmation modal */}
+      {confirmDeleteOrder && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div className="card" style={{ padding: 32, maxWidth: 420, width: '100%', textAlign: 'center' }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>⚠️</div>
+            <h3 style={{ fontFamily: 'Playfair Display', fontSize: 20, marginBottom: 8 }}>Delete Order?</h3>
+            <p style={{ color: 'var(--text-mid)', fontSize: 14, marginBottom: 6 }}>
+              You are about to permanently delete:
+            </p>
+            <div style={{ background: 'var(--warm-white)', borderRadius: 8, padding: '12px 16px', marginBottom: 20, fontSize: 13 }}>
+              <strong>{confirmDeleteOrder.id}</strong><br />
+              <span style={{ color: 'var(--text-light)' }}>
+                {confirmDeleteOrder.customer?.name || 'Guest'} · {fmt(confirmDeleteOrder.total)} · {confirmDeleteOrder.date}
+              </span>
+            </div>
+            <p style={{ color: '#cc3333', fontSize: 13, marginBottom: 24 }}>This cannot be undone.</p>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+              <button className="tab-btn" style={{ padding: '10px 24px' }} onClick={() => setConfirmDeleteOrder(null)}>Cancel</button>
+              <button
+                style={{ background: '#cc3333', color: 'white', border: 'none', borderRadius: 8, padding: '10px 24px', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+                onClick={async () => {
+                  try {
+                    await deleteOrder(confirmDeleteOrder.id);
+                    dispatch({ type: 'DELETE_ORDER', payload: confirmDeleteOrder.id });
+                    dispatch({ type: 'SET_TOAST', payload: { msg: 'Order deleted', icon: '🗑️' } });
+                  } catch {
+                    dispatch({ type: 'SET_TOAST', payload: { msg: 'Failed to delete order', icon: '❌' } });
+                  }
+                  setConfirmDeleteOrder(null);
+                }}
+              >
+                Yes, Delete
+              </button>
             </div>
           </div>
         </div>

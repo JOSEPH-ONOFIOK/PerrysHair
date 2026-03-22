@@ -202,19 +202,29 @@ export default function CheckoutPage() {
 
     if (payMethod === 'paystack') {
       const paystackKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
+      const callbackUrl = `${window.location.origin}/?payment_ref=${order.id}`;
+
       const openPaystack = () => {
+        // Save order to sessionStorage so we can recover it on redirect return
+        sessionStorage.setItem('pending_order', JSON.stringify(order));
+
         const handler = window.PaystackPop.setup({
-        key: paystackKey,
-        email: form.email,
-        amount: Math.round(total * payRate(payCurrency) * 100), // minor units
-        currency: payCurrency,
-        ref: order.id,
-        metadata: { custom_fields: [{ display_name: 'Customer Name', variable_name: 'customer_name', value: form.name }] },
-          callback: (transaction) => verifyAndConfirm(order, transaction?.reference || order.id),
+          key: paystackKey,
+          email: form.email,
+          amount: Math.round(total * payRate(payCurrency) * 100),
+          currency: payCurrency,
+          ref: order.id,
+          callback_url: callbackUrl,
+          metadata: { custom_fields: [{ display_name: 'Customer Name', variable_name: 'customer_name', value: form.name }] },
+          callback: (transaction) => {
+            sessionStorage.removeItem('pending_order');
+            verifyAndConfirm(order, transaction?.reference || order.id);
+          },
           onClose: () => { setProcessing(false); payBtnRef.current?.focus(); },
         });
         handler.openIframe();
       };
+
       if (window.PaystackPop) {
         openPaystack();
       } else {

@@ -1,4 +1,4 @@
-import { useContext, useEffect } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { AppProvider, AppContext } from './context.jsx';
 import GlobalStyles from './GlobalStyles.jsx';
 
@@ -30,7 +30,58 @@ const PAGE_TITLES = {
 };
 
 function AppInner() {
-  const { state } = useContext(AppContext);
+  const { state, dispatch } = useContext(AppContext);
+  const [verifying, setVerifying] = useState(false);
+
+  // Handle Paystack redirect return (?payment_ref=xxx)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('payment_ref');
+    if (!ref) return;
+
+    // Clean URL immediately
+    window.history.replaceState({}, '', window.location.pathname);
+
+    const pending = sessionStorage.getItem('pending_order');
+    if (!pending) return;
+    const order = JSON.parse(pending);
+    sessionStorage.removeItem('pending_order');
+
+    setVerifying(true);
+    fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-payment`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ reference: ref }),
+      }
+    )
+      .then((r) => r.json())
+      .then(async (data) => {
+        if (data.paid) {
+          const { insertOrder, decrementStock } = await import('./supabase.js');
+          const { sendReceiptEmail } = await import('./email.js');
+          if (order.customer?.id || state.user?.id) {
+            await insertOrder(order, state.user?.id).catch(console.error);
+          }
+          decrementStock(order.items);
+          order.items.forEach((item) => dispatch({ type: 'DECREMENT_STOCK', payload: { id: item.id, qty: item.qty } }));
+          sendReceiptEmail(order);
+          dispatch({ type: 'PLACE_ORDER', payload: order });
+          dispatch({ type: 'SET_TOAST', payload: { msg: 'Payment confirmed! Order placed 🎉', icon: '✅' } });
+        } else {
+          dispatch({ type: 'SET_TOAST', payload: { msg: 'Payment could not be verified — contact support', icon: '❌' } });
+          dispatch({ type: 'SET_VIEW', payload: 'checkout' });
+        }
+      })
+      .catch(() => {
+        dispatch({ type: 'SET_TOAST', payload: { msg: 'Verification error — contact support', icon: '❌' } });
+      })
+      .finally(() => setVerifying(false));
+  }, []);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -53,6 +104,17 @@ function AppInner() {
       default:              return <HomePage />;
     }
   };
+
+  if (verifying) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--cream)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+        <GlobalStyles />
+        <div style={{ fontSize: 48 }}>⏳</div>
+        <p style={{ fontFamily: 'Playfair Display', fontSize: 20, color: 'var(--espresso)' }}>Confirming your payment…</p>
+        <p style={{ fontSize: 14, color: 'var(--text-light)' }}>Please wait, do not close this page.</p>
+      </div>
+    );
+  }
 
   if (state.loading) {
     return (

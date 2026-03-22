@@ -1,7 +1,7 @@
 import { useContext, useState, useEffect, useRef } from 'react';
 import { AppContext } from '../context.jsx';
 import HairVisual from '../components/HairVisual.jsx';
-import { insertOrder } from '../supabase.js';
+import { insertOrder, decrementStock } from '../supabase.js';
 import { sendReceiptEmail } from '../email.js';
 
 const COUNTRY_CURRENCY = {
@@ -26,7 +26,6 @@ const DELIVERY_META = {
 
 const payOptions = [
   { id: 'paystack', label: 'Paystack', desc: 'Nigerian debit/credit cards & bank transfer', flag: '🇳🇬' },
-  { id: 'stripe', label: 'Stripe', desc: 'International credit/debit cards (Visa, Mastercard, Amex)', flag: '🌐' },
   { id: 'transfer', label: 'Bank Transfer', desc: 'Direct bank transfer to Perrys Hairline account', flag: '🏦' },
 ];
 
@@ -67,7 +66,6 @@ export default function CheckoutPage() {
 
   const SDK_URLS = {
     paystack: 'https://js.paystack.co/v1/inline.js',
-    stripe: 'https://js.stripe.com/v3/',
   };
 
   useEffect(() => {
@@ -76,7 +74,6 @@ export default function CheckoutPage() {
     if (!url || document.querySelector(`script[src="${url}"]`)) return;
     const s = document.createElement('script');
     s.src = url;
-    s.crossOrigin = 'anonymous';
     document.head.appendChild(s);
   }, [step, payMethod]);
 
@@ -103,10 +100,12 @@ export default function CheckoutPage() {
   const saveAndConfirm = async (order) => {
     try {
       if (state.user?.id) await insertOrder(order, state.user.id);
+      decrementStock(order.items); // fire-and-forget, updates product stock
     } catch (err) {
       console.error('Failed to save order:', err);
     }
     sendReceiptEmail(order); // fire-and-forget
+    order.items.forEach((item) => dispatch({ type: 'DECREMENT_STOCK', payload: { id: item.id, qty: item.qty } }));
     dispatch({ type: 'PLACE_ORDER', payload: order });
     dispatch({ type: 'SET_TOAST', payload: { msg: 'Order placed! Receipt sent to your email 📧', icon: '✅' } });
     setProcessing(false);
@@ -150,24 +149,29 @@ export default function CheckoutPage() {
 
     if (payMethod === 'paystack') {
       const paystackKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
-      const handler = window.PaystackPop.setup({
+      const openPaystack = () => {
+        const handler = window.PaystackPop.setup({
         key: paystackKey,
         email: form.email,
         amount: Math.round(total * payRate(payCurrency) * 100), // minor units
         currency: payCurrency,
         ref: order.id,
         metadata: { custom_fields: [{ display_name: 'Customer Name', variable_name: 'customer_name', value: form.name }] },
-        callback: (transaction) => verifyAndConfirm(order, transaction?.reference || order.id),
-        onClose: () => { setProcessing(false); payBtnRef.current?.focus(); },
-      });
-      handler.openIframe();
+          callback: (transaction) => verifyAndConfirm(order, transaction?.reference || order.id),
+          onClose: () => { setProcessing(false); payBtnRef.current?.focus(); },
+        });
+        handler.openIframe();
+      };
+      if (window.PaystackPop) {
+        openPaystack();
+      } else {
+        const s = document.querySelector(`script[src="${SDK_URLS.paystack}"]`);
+        if (s) s.addEventListener('load', openPaystack, { once: true });
+        else { setProcessing(false); dispatch({ type: 'SET_TOAST', payload: { msg: 'Paystack failed to load — check your connection', icon: '❌' } }); }
+      }
     } else if (payMethod === 'transfer') {
-      // Order saved immediately; awaits manual confirmation by admin
-      order.status = 0; // pending
+      order.status = 0;
       saveAndConfirm(order);
-    } else {
-      setProcessing(false);
-      dispatch({ type: 'SET_TOAST', payload: { msg: 'Stripe requires a server-side setup — contact support', icon: '⚠️' } });
     }
   };
 
@@ -279,11 +283,6 @@ export default function CheckoutPage() {
                   <div style={{ marginTop: 10, fontSize: 12, color: 'var(--text-light)', padding: '8px 10px', background: 'rgba(201,151,58,0.08)', borderRadius: 6 }}>
                     After transferring, click "Confirm Transfer" and your order will be held pending admin verification.
                   </div>
-                </div>
-              )}
-              {payMethod === 'stripe' && (
-                <div style={{ background: '#fff8f0', border: '1px solid #f0d8b0', borderRadius: 8, padding: 14, marginBottom: 16, fontSize: 13, color: '#a07030' }}>
-                  Stripe is available for international cards. Ensure your Stripe publishable key is configured and a server-side Payment Intent endpoint is set up.
                 </div>
               )}
               <div style={{ display: 'flex', gap: 12 }}>

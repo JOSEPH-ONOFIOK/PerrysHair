@@ -1,5 +1,5 @@
-import { createContext, useReducer, useEffect } from 'react';
-import { supabase, fetchProducts, fetchOrders, fetchProfile, fetchDeliverySettings, DEFAULT_DELIVERY } from './supabase.js';
+import { createContext, useReducer, useEffect, useRef } from 'react';
+import { supabase, fetchProducts, fetchOrders, fetchProfile, fetchDeliverySettings, fetchCart, syncCart, DEFAULT_DELIVERY } from './supabase.js';
 
 export const AppContext = createContext(null);
 
@@ -54,6 +54,8 @@ function reducer(state, action) {
           i.id === action.payload.id ? { ...i, qty: action.payload.qty } : i
         ),
       };
+    case 'SET_CART':
+      return { ...state, cart: action.payload };
     case 'CLEAR_CART':
       return { ...state, cart: [] };
     case 'SELECT_PRODUCT':
@@ -85,6 +87,24 @@ function reducer(state, action) {
       };
     case 'DELETE_PRODUCT':
       return { ...state, products: state.products.filter((p) => p.id !== action.payload) };
+    case 'UPDATE_PRODUCT_RATING':
+      return {
+        ...state,
+        products: state.products.map((p) =>
+          p.id === action.payload.id
+            ? { ...p, rating: action.payload.avg, reviews: action.payload.count }
+            : p
+        ),
+      };
+    case 'DECREMENT_STOCK':
+      return {
+        ...state,
+        products: state.products.map((p) =>
+          p.id === action.payload.id
+            ? { ...p, stock: Math.max(0, p.stock - action.payload.qty), inStock: Math.max(0, p.stock - action.payload.qty) > 0 }
+            : p
+        ),
+      };
     case 'UPDATE_ORDER_STATUS':
       return {
         ...state,
@@ -142,10 +162,13 @@ export function AppProvider({ children }) {
           isAdmin: profile.is_admin,
         },
       });
-      const orders = await fetchOrders(authUser.id, profile.is_admin);
+      const [orders, savedCart] = await Promise.all([
+        fetchOrders(authUser.id, profile.is_admin),
+        fetchCart(authUser.id),
+      ]);
       dispatch({ type: 'SET_ORDERS', payload: orders });
+      if (savedCart.length) dispatch({ type: 'SET_CART', payload: savedCart });
     } catch {
-      // Profile may not exist yet right after signup
       dispatch({
         type: 'SET_USER',
         payload: {
@@ -157,6 +180,14 @@ export function AppProvider({ children }) {
       });
     }
   }
+
+  // Sync cart to DB whenever it changes (logged-in users only)
+  const cartInitialized = useRef(false);
+  useEffect(() => {
+    if (!cartInitialized.current) { cartInitialized.current = true; return; }
+    if (!state.user?.id) return;
+    syncCart(state.user.id, state.cart);
+  }, [state.cart, state.user?.id]);
 
   return (
     <AppContext.Provider value={{ state, dispatch }}>

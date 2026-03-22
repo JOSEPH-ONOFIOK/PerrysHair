@@ -8,7 +8,7 @@ const GRADIENT_KEYS = Object.keys(HAIR_GRADIENTS);
 
 const EMPTY_FORM = {
   name: '', category: 'Bobs', price: '', originalPrice: '',
-  length: '', color: '', description: '', inStock: true, bestSeller: false,
+  length: '', color: '', description: '', stock: 0, bestSeller: false,
   image: GRADIENT_KEYS[0],
 };
 
@@ -43,6 +43,7 @@ export default function AdminDashboard() {
         image: imageValue,
         price: Number(form.price),
         originalPrice: form.originalPrice ? Number(form.originalPrice) : null,
+        stock: Number(form.stock) || 0,
       };
       if (editingId !== null) {
         const updated = await updateProduct(editingId, product);
@@ -73,7 +74,7 @@ export default function AdminDashboard() {
       length: product.length,
       color: product.color,
       description: product.description,
-      inStock: product.inStock,
+      stock: product.stock ?? 0,
       bestSeller: product.bestSeller,
       image: product.image,
     });
@@ -269,12 +270,12 @@ export default function AdminDashboard() {
                 <label style={{ fontSize: 12, color: 'var(--text-light)', display: 'block', marginBottom: 4 }}>Description *</label>
                 <textarea className="input-field" name="description" value={form.description} onChange={handleFormChange} placeholder="Describe the product..." required rows={3} style={{ resize: 'vertical' }} />
               </div>
-              <div style={{ display: 'flex', gap: 24, marginBottom: 16 }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, cursor: 'pointer' }}>
-                  <input type="checkbox" name="inStock" checked={form.inStock} onChange={handleFormChange} />
-                  In Stock
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, cursor: 'pointer' }}>
+              <div style={{ display: 'flex', gap: 16, marginBottom: 16, alignItems: 'flex-end' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: 12, color: 'var(--text-light)', display: 'block', marginBottom: 4 }}>Stock Quantity *</label>
+                  <input className="input-field" type="number" name="stock" min="0" value={form.stock} onChange={handleFormChange} placeholder="0" required />
+                </div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, cursor: 'pointer', paddingBottom: 10 }}>
                   <input type="checkbox" name="bestSeller" checked={form.bestSeller} onChange={handleFormChange} />
                   Best Seller
                 </label>
@@ -308,7 +309,7 @@ export default function AdminDashboard() {
                   )}
                   {product.bestSeller && <span className="badge badge-gold">Best Seller</span>}
                   <span className={`badge ${product.inStock ? 'badge-green' : 'badge-red'}`}>
-                    {product.inStock ? 'In Stock' : 'Out of Stock'}
+                    {product.inStock ? `${product.stock} in stock` : 'Out of Stock'}
                   </span>
                   <button
                     className="tab-btn"

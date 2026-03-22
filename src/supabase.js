@@ -17,7 +17,8 @@ function mapProduct(p) {
     rating: p.rating,
     reviews: p.reviews,
     bestSeller: p.best_seller,
-    inStock: p.in_stock,
+    stock: p.stock ?? 0,
+    inStock: (p.stock ?? 0) > 0,
     length: p.length,
     color: p.color,
     description: p.description,
@@ -103,7 +104,8 @@ export async function insertProduct(product) {
       price: product.price,
       original_price: product.originalPrice || null,
       best_seller: product.bestSeller,
-      in_stock: product.inStock,
+      stock: product.stock ?? 0,
+      in_stock: (product.stock ?? 0) > 0,
       length: product.length,
       color: product.color,
       description: product.description,
@@ -126,7 +128,8 @@ export async function updateProduct(id, product) {
       price: product.price,
       original_price: product.originalPrice || null,
       best_seller: product.bestSeller,
-      in_stock: product.inStock,
+      stock: product.stock ?? 0,
+      in_stock: (product.stock ?? 0) > 0,
       length: product.length,
       color: product.color,
       description: product.description,
@@ -142,6 +145,17 @@ export async function updateProduct(id, product) {
 export async function deleteProduct(id) {
   const { error } = await supabase.from('products').delete().eq('id', id);
   if (error) throw error;
+}
+
+export async function decrementStock(items) {
+  await Promise.all(
+    items.map(async (item) => {
+      const { data } = await supabase.from('products').select('stock').eq('id', item.id).single();
+      if (!data) return;
+      const newStock = Math.max(0, (data.stock ?? 0) - item.qty);
+      await supabase.from('products').update({ stock: newStock, in_stock: newStock > 0 }).eq('id', item.id);
+    })
+  );
 }
 
 // ── Orders ────────────────────────────────────────────────────────────────────
@@ -216,6 +230,67 @@ export async function saveDeliverySettings(fees) {
     .from('settings')
     .upsert(rows, { onConflict: 'key' });
   if (error) throw error;
+}
+
+// ── Reviews ───────────────────────────────────────────────────────────────────
+
+export async function fetchReviews(productId) {
+  const { data, error } = await supabase
+    .from('reviews')
+    .select('*')
+    .eq('product_id', productId)
+    .order('created_at', { ascending: false });
+  if (error) return [];
+  return data;
+}
+
+export async function upsertReview(userId, productId, rating, review, reviewerName) {
+  const { error } = await supabase.from('reviews').upsert(
+    { user_id: userId, product_id: productId, rating, review, reviewer_name: reviewerName },
+    { onConflict: 'user_id,product_id' }
+  );
+  if (error) throw error;
+
+  // Recalculate product avg rating
+  const { data } = await supabase.from('reviews').select('rating').eq('product_id', productId);
+  if (data?.length) {
+    const avg = +(data.reduce((s, r) => s + r.rating, 0) / data.length).toFixed(1);
+    await supabase.from('products').update({ rating: avg, reviews: data.length }).eq('id', productId);
+    return { avg, count: data.length };
+  }
+  return { avg: rating, count: 1 };
+}
+
+// ── Cart ──────────────────────────────────────────────────────────────────────
+
+export async function fetchCart(userId) {
+  const { data, error } = await supabase
+    .from('cart_items')
+    .select('*')
+    .eq('user_id', userId);
+  if (error) return [];
+  return data.map((i) => ({
+    id: i.product_id,
+    name: i.product_name,
+    price: i.product_price,
+    image: i.product_image,
+    qty: i.qty,
+  }));
+}
+
+export async function syncCart(userId, items) {
+  await supabase.from('cart_items').delete().eq('user_id', userId);
+  if (!items.length) return;
+  await supabase.from('cart_items').insert(
+    items.map((i) => ({
+      user_id: userId,
+      product_id: i.id,
+      product_name: i.name,
+      product_price: i.price,
+      product_image: i.image || null,
+      qty: i.qty,
+    }))
+  );
 }
 
 // ── Product Image Upload ──────────────────────────────────────────────────────

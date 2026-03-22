@@ -81,7 +81,7 @@ export default function Navbar() {
           <button
             className="mobile-menu-btn"
             onClick={() => setMenuOpen((o) => !o)}
-            style={{ background: 'none', border: 'none', padding: '6px', cursor: 'pointer', color: 'var(--espresso)', display: 'flex', flexDirection: 'column', gap: 5, alignItems: 'center', justifyContent: 'center' }}
+            style={{ background: 'none', border: 'none', padding: '6px', cursor: 'pointer', color: 'var(--espresso)', flexDirection: 'column', gap: 5, alignItems: 'center', justifyContent: 'center' }}
             aria-label="Menu"
             aria-expanded={menuOpen}
             aria-controls="mobile-nav"

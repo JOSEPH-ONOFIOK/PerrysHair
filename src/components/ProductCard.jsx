@@ -31,9 +31,12 @@ export default function ProductCard({ product, compact = false }) {
           <span className="badge badge-gold" style={{ position: 'absolute', top: 12, left: 12 }}>Best Seller</span>
         )}
         {!product.inStock && (
-          <span className="badge badge-red" style={{ position: 'absolute', top: 12, right: 12 }}>Sold Out</span>
+          <span className="badge badge-red" style={{ position: 'absolute', top: 12, right: 12 }}>Out of Stock</span>
         )}
-        {product.originalPrice && product.inStock && (
+        {product.inStock && product.stock <= 5 && (
+          <span className="badge" style={{ background: '#FFF3CD', color: '#856404', position: 'absolute', top: 12, right: 12 }}>Only {product.stock} left</span>
+        )}
+        {product.originalPrice && product.inStock && product.stock > 5 && (
           <span className="badge" style={{ background: '#E8F5EE', color: '#2D7A51', position: 'absolute', top: 12, right: 12 }}>Sale</span>
         )}
       </div>

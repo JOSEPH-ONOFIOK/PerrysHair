@@ -207,6 +207,8 @@ export async function updateOrderStatus(orderId, status) {
 }
 
 export async function deleteOrder(orderId) {
+  // Delete child items first, then the order
+  await supabase.from('order_items').delete().eq('order_id', orderId);
   const { error } = await supabase.from('orders').delete().eq('id', orderId);
   if (error) throw error;
 }

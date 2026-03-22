@@ -1,7 +1,7 @@
 import { useContext, useState } from 'react';
 import { AppContext } from '../context.jsx';
 import { ORDER_STATUSES, CATEGORIES, HAIR_GRADIENTS, fmt } from '../data.js';
-import { insertProduct, updateProduct, deleteProduct, updateOrderStatus, deleteOrder, saveDeliverySettings, uploadProductImage } from '../supabase.js';
+import { insertProduct, updateProduct, deleteProduct, updateOrderStatus, deleteOrder, fetchOrders, saveDeliverySettings, uploadProductImage } from '../supabase.js';
 import { sendTrackingEmail } from '../email.js';
 
 const GRADIENT_KEYS = Object.keys(HAIR_GRADIENTS);
@@ -586,7 +586,9 @@ export default function AdminDashboard() {
                 onClick={async () => {
                   try {
                     await deleteOrder(confirmDeleteOrder.id);
-                    dispatch({ type: 'DELETE_ORDER', payload: confirmDeleteOrder.id });
+                    // Re-fetch from backend so all stats are in sync
+                    const fresh = await fetchOrders(state.user.id, true);
+                    dispatch({ type: 'SET_ORDERS', payload: fresh });
                     dispatch({ type: 'SET_TOAST', payload: { msg: 'Order deleted', icon: '🗑️' } });
                   } catch {
                     dispatch({ type: 'SET_TOAST', payload: { msg: 'Failed to delete order', icon: '❌' } });

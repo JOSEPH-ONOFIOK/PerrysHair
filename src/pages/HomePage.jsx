@@ -173,16 +173,27 @@ export default function HomePage() {
               <div style={{ fontFamily: 'Playfair Display', fontSize: 20, fontWeight: 900, color: 'white', marginBottom: 12 }}>✦ Perrys Hairline</div>
               <p style={{ fontSize: 13, lineHeight: 1.7 }}>Premium human hair collection based in Lagos, Nigeria. Delivering beauty across Nigeria and worldwide.</p>
             </div>
-            {[['Quick Links', 'Home', 'Shop', 'Cart', 'Orders'], ['Support', 'FAQ', 'Returns', 'Track Order', 'Contact'], ['Follow Us', 'Instagram', 'TikTok', 'WhatsApp', 'Twitter']].map(([title, ...items]) => (
+            {[['Quick Links', 'Home', 'Shop', 'Cart', 'Orders'], ['Support', 'FAQ', 'Returns', 'Track Order', 'Contact']].map(([title, ...items]) => (
               <div key={title}>
                 <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--gold-light)', marginBottom: 12 }}>{title}</div>
                 {items.map((i) => <div key={i} style={{ fontSize: 13, marginBottom: 8, cursor: 'pointer' }}>{i}</div>)}
               </div>
             ))}
+            <div>
+              <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--gold-light)', marginBottom: 12 }}>Follow Us</div>
+              <a href="https://www.instagram.com/perrys_hairline" target="_blank" rel="noopener noreferrer"
+                style={{ fontSize: 13, marginBottom: 8, display: 'block', color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>
+                Instagram
+              </a>
+              <a href="https://www.tiktok.com/@perrys_hairline" target="_blank" rel="noopener noreferrer"
+                style={{ fontSize: 13, marginBottom: 8, display: 'block', color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>
+                TikTok
+              </a>
+            </div>
           </div>
           <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 20, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
             <span style={{ fontSize: 12 }}>© 2025 Perrys Hairline. All rights reserved.</span>
-            <span style={{ fontSize: 12 }}>Built Joseph Onofiok</span>
+            <span style={{ fontSize: 12 }}>Built by Dextercodes</span>
           </div>
         </div>
       </footer>

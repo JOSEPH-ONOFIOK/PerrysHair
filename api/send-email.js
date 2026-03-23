@@ -224,10 +224,13 @@ export default async function handler(req, res) {
 
     if (!config.to) return res.status(400).json({ error: 'No recipient email' });
 
+    // Validate recipient is a real email address before sending
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(config.to))
+      return res.status(400).json({ error: 'Invalid recipient email' });
+
     await transporter.sendMail({ from: FROM, ...config });
     res.json({ sent: true });
-  } catch (err) {
-    console.error('[send-email]', err.message);
-    res.status(500).json({ error: err.message });
+  } catch {
+    res.status(500).json({ error: 'Failed to send email' });
   }
 }

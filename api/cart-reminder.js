@@ -38,7 +38,13 @@ export default async function handler(req, res) {
 
     // Send reminder to each user
     let sent = 0;
-    const appUrl = process.env.APP_URL || 'https://perrys-hair.vercel.app';
+    const rawAppUrl = process.env.APP_URL || 'https://perrys-hair.vercel.app';
+    // Guard against SSRF: only allow https and known safe hosts
+    const parsedUrl = new URL(rawAppUrl);
+    if (parsedUrl.protocol !== 'https:') throw new Error('APP_URL must use HTTPS');
+    const BLOCKED = /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|0\.0\.0\.0|::1)/i;
+    if (BLOCKED.test(parsedUrl.hostname)) throw new Error('APP_URL points to internal host');
+    const appUrl = rawAppUrl.replace(/\/$/, '');
 
     for (const [userId, items] of Object.entries(byUser)) {
       const user = userMap[userId];
@@ -58,8 +64,7 @@ export default async function handler(req, res) {
     }
 
     res.json({ sent });
-  } catch (err) {
-    console.error('[cart-reminder]', err.message);
-    res.status(500).json({ error: err.message });
+  } catch {
+    res.status(500).json({ error: 'Cart reminder failed' });
   }
 }

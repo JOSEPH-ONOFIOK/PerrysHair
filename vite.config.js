@@ -12,4 +12,12 @@ export default defineConfig({
   plugins: [react()],
   server: { headers: securityHeaders },
   preview: { headers: securityHeaders },
+  build: {
+    // Strip all console.* calls from the production bundle
+    minify: 'esbuild',
+    target: 'es2020',
+  },
+  esbuild: {
+    drop: ['console', 'debugger'],
+  },
 })

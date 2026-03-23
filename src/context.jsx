@@ -136,7 +136,16 @@ export function AppProvider({ children }) {
 
   // Listen to Supabase auth state changes
   useEffect(() => {
+    // If the URL hash contains type=recovery, show reset screen immediately
+    // and skip normal session loading so we don't redirect to home
+    const isRecovery = window.location.hash.includes('type=recovery');
+
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (isRecovery) {
+        dispatch({ type: 'SET_VIEW', payload: 'reset-password' });
+        dispatch({ type: 'SET_LOADING', payload: false });
+        return;
+      }
       if (session?.user) loadUser(session.user);
       else dispatch({ type: 'SET_LOADING', payload: false });
     });
@@ -144,6 +153,7 @@ export function AppProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (_event === 'PASSWORD_RECOVERY') {
         dispatch({ type: 'SET_VIEW', payload: 'reset-password' });
+        dispatch({ type: 'SET_LOADING', payload: false });
         return;
       }
       if (session?.user) {
@@ -154,7 +164,7 @@ export function AppProvider({ children }) {
             dispatch({ type: 'SET_TOAST', payload: { msg: 'Registration complete! Welcome to Perrys Hairline', icon: '✨' } });
           }
         }
-        loadUser(session.user);
+        if (!isRecovery) loadUser(session.user);
       } else {
         localStorage.removeItem('perrys_login_time');
         dispatch({ type: 'LOGOUT' });

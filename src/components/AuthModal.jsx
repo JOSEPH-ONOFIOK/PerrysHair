@@ -24,12 +24,11 @@ export default function AuthModal() {
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
-            body: JSON.stringify({ email: form.email }),
+            body: JSON.stringify({ email: form.email, redirect_to: window.location.origin }),
           }
         );
         if (!res.ok) throw new Error('Could not send reset email');
-        // Also send our branded email (Supabase sends its own reset link too — we override with ours via the admin API in production)
-        sendForgotPassword(form.email, `${window.location.origin}/#reset`);
+        sendForgotPassword(form.email, window.location.origin);
         dispatch({ type: 'SET_TOAST', payload: { msg: 'Reset link sent to your email!', icon: '📧' } });
         dispatch({ type: 'SET_AUTH_MODE', payload: 'login' });
       } else if (mode === 'signup') {

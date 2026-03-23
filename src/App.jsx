@@ -33,6 +33,46 @@ const PAGE_TITLES = {
 function AppInner() {
   const { state, dispatch } = useContext(AppContext);
   const [verifying, setVerifying] = useState(false);
+  const [pendingRecovery, setPendingRecovery] = useState(
+    () => !!localStorage.getItem('pending_order')
+  );
+
+  const recoverPayment = () => {
+    const raw = localStorage.getItem('pending_order');
+    if (!raw) { setPendingRecovery(false); return; }
+    let order;
+    try { order = JSON.parse(raw); } catch { setPendingRecovery(false); return; }
+    if (!order?.id) { setPendingRecovery(false); return; }
+    localStorage.removeItem('pending_order');
+    sessionStorage.removeItem('pending_order');
+    setPendingRecovery(false);
+    setVerifying(true);
+    fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-payment`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ reference: order.id }),
+      }
+    )
+      .then((r) => r.json())
+      .then(async (data) => {
+        if (data.paid) {
+          const { insertOrder, decrementStock } = await import('./supabase.js');
+          const { sendReceiptEmail } = await import('./email.js');
+          if (state.user?.id) await insertOrder(order, state.user.id).catch(() => {});
+          decrementStock(order.items);
+          order.items.forEach((item) => dispatch({ type: 'DECREMENT_STOCK', payload: { id: item.id, qty: item.qty } }));
+          sendReceiptEmail(order);
+          dispatch({ type: 'PLACE_ORDER', payload: order });
+          dispatch({ type: 'SET_TOAST', payload: { msg: 'Payment confirmed! Order placed 🎉', icon: '✅' } });
+        } else {
+          dispatch({ type: 'SET_TOAST', payload: { msg: 'Payment not confirmed yet — if you paid, contact support', icon: '⚠️' } });
+        }
+      })
+      .catch(() => dispatch({ type: 'SET_TOAST', payload: { msg: 'Could not verify — contact support on WhatsApp', icon: '❌' } }))
+      .finally(() => setVerifying(false));
+  };
 
   // Handle Paystack redirect return (?payment_ref=xxx&trxref=xxx)
   useEffect(() => {
@@ -166,6 +206,19 @@ function AppInner() {
       <header>
         <Navbar />
       </header>
+      {pendingRecovery && (
+        <div style={{ background: '#fff8e6', borderBottom: '1px solid #f0d080', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, flexWrap: 'wrap', fontSize: 14 }}>
+          <span>💳 We found a pending payment — did you complete it?</span>
+          <button onClick={recoverPayment}
+            style={{ background: 'var(--gold)', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 18px', fontWeight: 700, cursor: 'pointer', fontSize: 14 }}>
+            Yes, check my payment
+          </button>
+          <button onClick={() => { localStorage.removeItem('pending_order'); setPendingRecovery(false); }}
+            style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 6, padding: '8px 14px', cursor: 'pointer', fontSize: 13, color: 'var(--text-light)' }}>
+            No, cancel
+          </button>
+        </div>
+      )}
       <main id="main-content">{renderView()}</main>
       {state.view === 'auth' && <AuthModal />}
       {state.view === 'reset-password' && <ResetPasswordModal />}

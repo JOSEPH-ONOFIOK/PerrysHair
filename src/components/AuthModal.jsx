@@ -1,7 +1,7 @@
 import { useContext, useState } from 'react';
 import { AppContext } from '../context.jsx';
 import { signIn, signUp } from '../supabase.js';
-import { sendWelcomeEmail, sendForgotPassword } from '../email.js';
+import { sendWelcomeEmail } from '../email.js';
 
 export default function AuthModal() {
   const { state, dispatch } = useContext(AppContext);
@@ -19,16 +19,10 @@ export default function AuthModal() {
     try {
       if (mode === 'forgot') {
         // Generate reset link via Supabase, then send via our Nodemailer
-        const res = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/auth/v1/recover`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
-            body: JSON.stringify({ email: form.email, redirect_to: window.location.origin }),
-          }
+        const { error: resetErr } = await import('./supabase.js').then(m =>
+          m.supabase.auth.resetPasswordForEmail(form.email, { redirectTo: window.location.origin })
         );
-        if (!res.ok) throw new Error('Could not send reset email');
-        sendForgotPassword(form.email, window.location.origin);
+        if (resetErr) throw new Error(resetErr.message);
         dispatch({ type: 'SET_TOAST', payload: { msg: 'Reset link sent to your email!', icon: '📧' } });
         dispatch({ type: 'SET_AUTH_MODE', payload: 'login' });
       } else if (mode === 'signup') {

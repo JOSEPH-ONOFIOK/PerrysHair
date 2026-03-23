@@ -147,17 +147,34 @@ export function AppProvider({ children }) {
         return;
       }
       if (session?.user) {
-        loadUser(session.user);
-        if (_event === 'SIGNED_IN' && localStorage.getItem('perrys_awaiting_confirm')) {
-          localStorage.removeItem('perrys_awaiting_confirm');
-          dispatch({ type: 'SET_TOAST', payload: { msg: 'Registration complete! Welcome to Perrys Hairline', icon: '✨' } });
+        if (_event === 'SIGNED_IN') {
+          localStorage.setItem('perrys_login_time', Date.now().toString());
+          if (localStorage.getItem('perrys_awaiting_confirm')) {
+            localStorage.removeItem('perrys_awaiting_confirm');
+            dispatch({ type: 'SET_TOAST', payload: { msg: 'Registration complete! Welcome to Perrys Hairline', icon: '✨' } });
+          }
         }
+        loadUser(session.user);
       } else {
+        localStorage.removeItem('perrys_login_time');
         dispatch({ type: 'LOGOUT' });
       }
     });
 
-    return () => subscription.unsubscribe();
+    // Check every minute — sign out if session is older than 1 hour
+    const SESSION_LIMIT = 60 * 60 * 1000;
+    const sessionTimer = setInterval(async () => {
+      const loginTime = localStorage.getItem('perrys_login_time');
+      if (loginTime && Date.now() - Number(loginTime) > SESSION_LIMIT) {
+        await supabase.auth.signOut();
+        dispatch({ type: 'SET_TOAST', payload: { msg: 'Your session has expired. Please sign in again.', icon: '🔒' } });
+      }
+    }, 60 * 1000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearInterval(sessionTimer);
+    };
   }, []);
 
   async function loadUser(authUser) {

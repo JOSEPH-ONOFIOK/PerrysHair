@@ -10,6 +10,9 @@ const transporter = nodemailer.createTransport({
 
 const FROM = `"Perry's Hairline" <${process.env.GMAIL_USER}>`;
 
+// Escape user-supplied strings before injecting into HTML
+const esc = (s) => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+
 const ORDER_STATUSES = [
   'Order Placed', 'Payment Confirmed', 'Processing',
   'Shipped', 'Out for Delivery', 'Delivered', 'Cancelled',
@@ -58,11 +61,12 @@ const p = (text) =>
 // ── Email builders ─────────────────────────────────────────────────────────────
 
 function welcomeEmail({ name, email }) {
+  const safeName = esc(name) || 'Beautiful';
   return {
     to: email,
-    subject: `Welcome to Perry's Hairline, ${name || 'Beautiful'}! 🌸`,
+    subject: `Welcome to Perry's Hairline, ${safeName}! 🌸`,
     html: wrap(`
-      ${h1(`Welcome, ${name || 'Beautiful'}! 🌸`)}
+      ${h1(`Welcome, ${safeName}! 🌸`)}
       ${p("We're so glad you joined the Perry's Hairline family. Your next crown is just a few clicks away.")}
       ${p('Browse our collection of premium human hair wigs, lace fronts, and more — crafted to make you look and feel incredible.')}
       <div style="text-align:center">${btn('Start Shopping', process.env.APP_URL || 'https://perrys-hair.vercel.app')}</div>
@@ -92,30 +96,34 @@ function forgotPasswordEmail({ email, resetUrl }) {
 function orderReceiptEmail({ order }) {
   const items = (order.items || []).map((i) =>
     `<tr>
-      <td style="padding:10px 0;border-bottom:1px solid #f5e8ee;font-size:14px;color:#333">${i.name} × ${i.qty}</td>
+      <td style="padding:10px 0;border-bottom:1px solid #f5e8ee;font-size:14px;color:#333">${esc(i.name)} × ${Number(i.qty)}</td>
       <td style="padding:10px 0;border-bottom:1px solid #f5e8ee;font-size:14px;color:#333;text-align:right;font-weight:700">${fmt(i.price * i.qty)}</td>
     </tr>`
   ).join('');
 
+  const custName = esc(order.customer?.name) || 'there';
+  const custAddress = esc(order.customer?.address);
+  const custCity = esc(order.customer?.city);
+
   return {
     to: order.customer?.email,
-    subject: `Order Confirmed — ${order.id} 🎉`,
+    subject: `Order Confirmed — ${esc(order.id)} 🎉`,
     html: wrap(`
       ${h1('Your Order is Confirmed! 🎉')}
-      ${p(`Hi ${order.customer?.name || 'there'}, thank you for your order! We've received it and will start processing right away.`)}
+      ${p(`Hi ${custName}, thank you for your order! We've received it and will start processing right away.`)}
       <div style="background:#fdf0f5;border-radius:10px;padding:20px 24px;margin:20px 0">
         <table width="100%" cellpadding="0" cellspacing="0">
           <tr>
             <td style="font-size:13px;color:#999">Order ID</td>
-            <td style="font-size:13px;color:#3d1f1f;font-weight:700;text-align:right">${order.id}</td>
+            <td style="font-size:13px;color:#3d1f1f;font-weight:700;text-align:right">${esc(order.id)}</td>
           </tr>
           <tr>
             <td style="font-size:13px;color:#999;padding-top:6px">Tracking</td>
-            <td style="font-size:13px;color:#C9973A;font-weight:700;text-align:right;padding-top:6px">${order.tracking}</td>
+            <td style="font-size:13px;color:#C9973A;font-weight:700;text-align:right;padding-top:6px">${esc(order.tracking)}</td>
           </tr>
           <tr>
             <td style="font-size:13px;color:#999;padding-top:6px">Delivery</td>
-            <td style="font-size:13px;color:#3d1f1f;text-align:right;padding-top:6px;text-transform:capitalize">${order.delivery}</td>
+            <td style="font-size:13px;color:#3d1f1f;text-align:right;padding-top:6px;text-transform:capitalize">${esc(order.delivery)}</td>
           </tr>
         </table>
       </div>
@@ -126,7 +134,7 @@ function orderReceiptEmail({ order }) {
           <td style="padding-top:14px;font-size:16px;font-weight:900;color:#C9973A;text-align:right">${fmt(order.total)}</td>
         </tr>
       </table>
-      ${order.customer?.address ? `${p(`<strong>Delivering to:</strong> ${order.customer.address}, ${order.customer.city || ''}`)}` : ''}
+      ${custAddress ? `${p(`<strong>Delivering to:</strong> ${custAddress}, ${custCity}`)}` : ''}
       ${p("We'll send you another email as soon as your order ships. Track your order anytime from your account.")}
     `),
   };
@@ -142,40 +150,42 @@ function orderUpdateEmail({ order, status }) {
     return `<tr>
       <td style="padding:8px 0;vertical-align:middle">
         <span style="display:inline-block;width:20px;height:20px;border-radius:50%;background:${done ? '#C9973A' : '#eee'};color:${done ? '#fff' : '#bbb'};font-size:11px;font-weight:700;text-align:center;line-height:20px;margin-right:12px">${done ? '✓' : (i + 1)}</span>
-        <span style="font-size:14px;color:${active ? '#C9973A' : done ? '#3d1f1f' : '#bbb'};font-weight:${active ? '700' : '400'}">${s}${active ? ' ← Current' : ''}</span>
+        <span style="font-size:14px;color:${active ? '#C9973A' : done ? '#3d1f1f' : '#bbb'};font-weight:${active ? '700' : '400'}">${esc(s)}${active ? ' ← Current' : ''}</span>
       </td>
     </tr>`;
   }).join('');
 
   return {
     to: order.customer?.email,
-    subject: `Order Update: ${statusLabel} — ${order.id}`,
+    subject: `Order Update: ${statusLabel} — ${esc(order.id)}`,
     html: wrap(`
       ${h1(`Order ${statusLabel}`)}
-      ${p(`Hi ${order.customer?.name || 'there'}, here's an update on your order <strong>${order.id}</strong>.`)}
+      ${p(`Hi ${esc(order.customer?.name) || 'there'}, here's an update on your order <strong>${esc(order.id)}</strong>.`)}
       <div style="background:#fdf0f5;border-radius:10px;padding:20px 24px;margin:20px 0">
         <table width="100%" cellpadding="0" cellspacing="0">${steps}</table>
       </div>
-      ${p(`Your tracking number is <strong style="color:#C9973A">${order.tracking}</strong>.`)}
+      ${p(`Your tracking number is <strong style="color:#C9973A">${esc(order.tracking)}</strong>.`)}
       ${p("Thank you for shopping with Perry's Hairline!")}
     `),
   };
 }
 
+
 function cartReminderEmail({ name, email, items }) {
+  const safeName = esc(name) || 'beautiful';
   const itemList = items.map((i) =>
     `<tr>
-      <td style="padding:8px 0;font-size:14px;color:#333;border-bottom:1px solid #f5e8ee">${i.product_name}</td>
+      <td style="padding:8px 0;font-size:14px;color:#333;border-bottom:1px solid #f5e8ee">${esc(i.product_name)}</td>
       <td style="padding:8px 0;font-size:14px;color:#C9973A;font-weight:700;text-align:right;border-bottom:1px solid #f5e8ee">${fmt(i.product_price)}</td>
     </tr>`
   ).join('');
 
   return {
     to: email,
-    subject: `You left something behind, ${name || 'beautiful'} 👀`,
+    subject: `You left something behind, ${safeName} 👀`,
     html: wrap(`
       ${h1('Your cart misses you! 💛')}
-      ${p(`Hi ${name || 'there'}, you left some gorgeous pieces in your cart. Don't let them get away!`)}
+      ${p(`Hi ${safeName}, you left some gorgeous pieces in your cart. Don't let them get away!`)}
       <table width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0">${itemList}</table>
       <div style="text-align:center">${btn('Complete My Order', process.env.APP_URL || 'https://perrys-hair.vercel.app')}</div>
       ${p('Stock is limited — these beauties might not last long.')}

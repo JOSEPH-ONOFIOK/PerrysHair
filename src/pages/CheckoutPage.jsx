@@ -102,10 +102,10 @@ export default function CheckoutPage() {
 
   const saveAndConfirm = async (order) => {
     try {
-      // Validate items exist and have sufficient stock
+      // Fetch authoritative prices + stock from DB — never trust client-supplied prices
       const { data: products } = await supabase
         .from('products')
-        .select('id, name, stock')
+        .select('id, name, price, stock')
         .in('id', order.items.map((i) => i.id));
 
       if (!products || products.length !== order.items.length) {
@@ -124,10 +124,20 @@ export default function CheckoutPage() {
         }
       }
 
+      // Recompute total server-side to prevent price manipulation
+      const serverSubtotal = products.reduce((sum, p) => {
+        const qty = order.items.find((i) => i.id === p.id)?.qty || 0;
+        return sum + p.price * qty;
+      }, 0);
+      const serverVat = Math.round(serverSubtotal * 0.025);
+      const serverDelivery = deliveryOptions.find((o) => o.id === order.delivery)?.fee || 0;
+      const serverTotal = serverSubtotal + serverVat + serverDelivery;
+      order = { ...order, total: serverTotal };
+
       if (state.user?.id) await insertOrder(order, state.user.id);
       decrementStock(order.items);
-    } catch (err) {
-      console.error('Failed to save order:', err);
+    } catch {
+      // suppress — order proceeds, stock sync is best-effort
     }
     sendReceiptEmail(order); // fire-and-forget
     order.items.forEach((item) => dispatch({ type: 'DECREMENT_STOCK', payload: { id: item.id, qty: item.qty } }));

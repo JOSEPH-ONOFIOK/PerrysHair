@@ -38,14 +38,17 @@ function AppInner() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const ref = params.get('payment_ref');
-    if (!ref) return;
+    // Only allow safe alphanumeric reference formats — reject anything else
+    if (!ref || !/^[A-Za-z0-9_\-]{4,100}$/.test(ref)) return;
 
     // Clean URL immediately
     window.history.replaceState({}, '', window.location.pathname);
 
     const pending = sessionStorage.getItem('pending_order');
     if (!pending) return;
-    const order = JSON.parse(pending);
+    let order;
+    try { order = JSON.parse(pending); } catch { return; }
+    if (!order?.id || !Array.isArray(order?.items)) return;
     sessionStorage.removeItem('pending_order');
 
     setVerifying(true);

@@ -82,7 +82,7 @@ export default function CheckoutPage() {
   }));
 
   const subtotal = state.cart.reduce((s, i) => s + i.price * i.qty, 0);
-  const service = Math.round(subtotal * 0.02);
+  const service = Math.round(subtotal * 0.025);
   const deliveryFee = deliveryOptions.find((o) => o.id === delivery)?.fee || 0;
   const total = subtotal + service + deliveryFee;
 
@@ -388,7 +388,7 @@ export default function CheckoutPage() {
               );
             })}
             <div style={{ height: 1, background: 'var(--border)', margin: '12px 0' }} />
-            {[['Subtotal', fmtLocal(subtotal)], ['Service Fee (2%)', fmtLocal(service)], ['Delivery', fmtLocal(deliveryFee)]].map(([l, v]) => (
+            {[['Subtotal', fmtLocal(subtotal)], ['VAT (2.5%)', fmtLocal(service)], ['Delivery', fmtLocal(deliveryFee)]].map(([l, v]) => (
               <div key={l} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 8, color: 'var(--text-mid)' }}>
                 <span>{l}</span><span>{v}</span>
               </div>

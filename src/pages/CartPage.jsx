@@ -7,7 +7,7 @@ export default function CartPage() {
   const { state, dispatch } = useContext(AppContext);
   const { cart } = state;
   const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
-  const service = Math.round(subtotal * 0.02);
+  const service = Math.round(subtotal * 0.025);
   const total = subtotal + service;
 
   if (cart.length === 0)
@@ -69,7 +69,7 @@ export default function CartPage() {
                 <span>{fmt(subtotal)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
-                <span style={{ color: 'var(--text-light)' }}>Service Fee (2%)</span>
+                <span style={{ color: 'var(--text-light)' }}>VAT (2.5%)</span>
                 <span style={{ color: 'var(--gold-dark)', fontSize: 12 }}>{fmt(service)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>

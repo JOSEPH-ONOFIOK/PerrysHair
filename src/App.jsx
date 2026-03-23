@@ -74,15 +74,19 @@ function AppInner() {
       .finally(() => setVerifying(false));
   };
 
-  // Handle Paystack redirect return (?payment_ref=xxx&trxref=xxx)
+  // Handle Paystack redirect return — supports both ?payment_ref= and bare ?trxref=
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const ref = params.get('payment_ref');
-    // Only allow safe alphanumeric reference formats — reject anything else
-    if (!ref || !/^[A-Za-z0-9_\-]{4,100}$/.test(ref)) return;
+    const trxrefParam = params.get('trxref') || params.get('reference');
 
-    // Paystack appends trxref= on redirect — use it for verification if present
-    const trxref = params.get('trxref') || params.get('reference') || ref;
+    // Accept redirect if either our custom ref or Paystack's trxref is present
+    const hasRef = ref && /^[A-Za-z0-9_\-]{4,100}$/.test(ref);
+    const hasTrxref = trxrefParam && /^[A-Za-z0-9_\-]{4,100}$/.test(trxrefParam);
+    if (!hasRef && !hasTrxref) return;
+
+    // Use Paystack's trxref for verification; fall back to our order ref
+    const trxref = trxrefParam || ref;
 
     // Clean URL immediately
     window.history.replaceState({}, '', window.location.pathname);
@@ -95,6 +99,7 @@ function AppInner() {
     if (!order?.id || !Array.isArray(order?.items)) return;
     sessionStorage.removeItem('pending_order');
     localStorage.removeItem('pending_order');
+    setPendingRecovery(false);
 
     setVerifying(true);
     fetch(

@@ -34,22 +34,27 @@ function AppInner() {
   const { state, dispatch } = useContext(AppContext);
   const [verifying, setVerifying] = useState(false);
 
-  // Handle Paystack redirect return (?payment_ref=xxx)
+  // Handle Paystack redirect return (?payment_ref=xxx&trxref=xxx)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const ref = params.get('payment_ref');
     // Only allow safe alphanumeric reference formats — reject anything else
     if (!ref || !/^[A-Za-z0-9_\-]{4,100}$/.test(ref)) return;
 
+    // Paystack appends trxref= on redirect — use it for verification if present
+    const trxref = params.get('trxref') || params.get('reference') || ref;
+
     // Clean URL immediately
     window.history.replaceState({}, '', window.location.pathname);
 
-    const pending = sessionStorage.getItem('pending_order');
-    if (!pending) return;
+    // Try sessionStorage first, fall back to localStorage (Opay/bank redirects clear sessionStorage)
+    const raw = sessionStorage.getItem('pending_order') || localStorage.getItem('pending_order');
+    if (!raw) return;
     let order;
-    try { order = JSON.parse(pending); } catch { return; }
+    try { order = JSON.parse(raw); } catch { return; }
     if (!order?.id || !Array.isArray(order?.items)) return;
     sessionStorage.removeItem('pending_order');
+    localStorage.removeItem('pending_order');
 
     setVerifying(true);
     fetch(
@@ -60,7 +65,7 @@ function AppInner() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         },
-        body: JSON.stringify({ reference: ref }),
+        body: JSON.stringify({ reference: trxref }),
       }
     )
       .then((r) => r.json())

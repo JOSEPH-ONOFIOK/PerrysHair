@@ -231,8 +231,10 @@ export default function CheckoutPage() {
       const callbackUrl = `${window.location.origin}/?payment_ref=${order.id}`;
 
       const openPaystack = () => {
-        // Save order to sessionStorage so we can recover it on redirect return
-        sessionStorage.setItem('pending_order', JSON.stringify(order));
+        // Save to both storages — sessionStorage can be lost during Opay/bank redirect chains
+        const serialized = JSON.stringify(order);
+        sessionStorage.setItem('pending_order', serialized);
+        localStorage.setItem('pending_order', serialized);
 
         const handler = window.PaystackPop.setup({
           key: paystackKey,
@@ -240,10 +242,12 @@ export default function CheckoutPage() {
           amount: Math.round(total * payRate(payCurrency) * 100),
           currency: payCurrency,
           ref: order.id,
+          label: "Perry's Hairline",
           callback_url: callbackUrl,
           metadata: { custom_fields: [{ display_name: 'Customer Name', variable_name: 'customer_name', value: form.name }] },
           callback: (transaction) => {
             sessionStorage.removeItem('pending_order');
+            localStorage.removeItem('pending_order');
             verifyAndConfirm(order, transaction?.reference || order.id);
           },
           onClose: () => { setProcessing(false); payBtnRef.current?.focus(); },

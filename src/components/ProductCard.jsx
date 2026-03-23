@@ -44,7 +44,7 @@ export default function ProductCard({ product, compact = false }) {
       {/* Info */}
       <div style={{ padding: compact ? '14px 16px' : '18px 20px' }}>
         <div style={{ fontSize: 11, color: 'var(--text-light)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>{product.category}</div>
-        <div style={{ fontFamily: 'Playfair Display', fontSize: compact ? 16 : 18, fontWeight: 700, color: 'var(--espresso)', marginBottom: 6 }}>{product.name}</div>
+        <div style={{ fontFamily: 'Playfair Display', fontSize: compact ? 16 : 18, fontWeight: 700, color: 'var(--espresso)', marginBottom: 6, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{product.name}</div>
         <div style={{ fontSize: 12, color: 'var(--text-light)', marginBottom: 8 }}>{product.length} • {product.color}</div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>

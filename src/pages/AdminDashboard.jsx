@@ -129,9 +129,9 @@ export default function AdminDashboard() {
       </div>
 
       {/* Tabs */}
-      <div className="admin-tabs" style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+      <div className="admin-tabs" role="tablist" style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
         {[['orders', 'Orders'], ['history', 'Order History'], ['customers', 'Customers'], ['products', 'Products'], ['delivery', 'Delivery Pricing']].map(([v, l]) => (
-          <button key={v} className={`tab-btn${tab === v ? ' active' : ''}`}
+          <button key={v} role="tab" aria-selected={tab === v} className={`tab-btn${tab === v ? ' active' : ''}`}
             onClick={() => dispatch({ type: 'SET_ADMIN_TAB', payload: v })}>{l}</button>
         ))}
       </div>

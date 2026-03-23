@@ -8,18 +8,28 @@ import { fetchReviews, upsertReview } from '../supabase.js';
 function Stars({ rating, size = 16, interactive = false, onRate }) {
   const [hovered, setHovered] = useState(0);
   return (
-    <span style={{ display: 'inline-flex', gap: 2 }}>
-      {[1, 2, 3, 4, 5].map((s) => (
+    <span style={{ display: 'inline-flex', gap: 2 }} role={interactive ? 'radiogroup' : undefined}>
+      {[1, 2, 3, 4, 5].map((i) => (
         <span
-          key={s}
+          key={i}
+          tabIndex={interactive ? 0 : -1}
+          role={interactive ? 'radio' : undefined}
+          aria-label={`${i} star`}
+          aria-checked={interactive ? i === rating : undefined}
           style={{
             fontSize: size, cursor: interactive ? 'pointer' : 'default',
-            color: s <= (hovered || rating) ? 'var(--gold)' : '#ddd',
+            color: i <= (hovered || rating) ? 'var(--gold)' : '#ddd',
             transition: 'color 0.1s',
           }}
-          onMouseEnter={() => interactive && setHovered(s)}
+          onMouseEnter={() => interactive && setHovered(i)}
           onMouseLeave={() => interactive && setHovered(0)}
-          onClick={() => interactive && onRate?.(s)}
+          onClick={() => interactive && onRate?.(i)}
+          onKeyDown={(e) => {
+            if (!interactive) return;
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onRate?.(i); }
+            if (e.key === 'ArrowRight') { e.preventDefault(); onRate?.(Math.min(5, i + 1)); }
+            if (e.key === 'ArrowLeft') { e.preventDefault(); onRate?.(Math.max(1, i - 1)); }
+          }}
         >★</span>
       ))}
     </span>
@@ -30,6 +40,7 @@ export default function ProductDetail() {
   const { state, dispatch } = useContext(AppContext);
   const p = state.selectedProduct;
   const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
   const [myRating, setMyRating] = useState(0);
   const [myReview, setMyReview] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -45,13 +56,15 @@ export default function ProductDetail() {
     setMyRating(0);
     setMyReview('');
     setSubmitted(false);
+    setReviewsLoading(true);
     fetchReviews(p.id).then((data) => {
       setReviews(data);
+      setReviewsLoading(false);
       if (state.user?.id) {
         const mine = data.find((r) => r.user_id === state.user.id);
         if (mine) { setMyRating(mine.rating); setMyReview(mine.review || ''); setSubmitted(true); }
       }
-    });
+    }).catch(() => setReviewsLoading(false));
   }, [p?.id]);
 
   if (!p) return null;
@@ -202,7 +215,11 @@ export default function ProductDetail() {
         )}
 
         {/* Review list */}
-        {reviews.length === 0 ? (
+        {reviewsLoading ? (
+          <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-light)' }}>
+            Loading reviews...
+          </div>
+        ) : reviews.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-light)' }}>
             <div style={{ fontSize: 36, marginBottom: 8 }}>⭐</div>
             <p>No reviews yet. Be the first to review this product!</p>

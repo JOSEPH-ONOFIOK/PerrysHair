@@ -74,6 +74,7 @@ export default function CheckoutPage() {
     if (!url || document.querySelector(`script[src="${url}"]`)) return;
     const s = document.createElement('script');
     s.src = url;
+    s.async = true;
     document.head.appendChild(s);
   }, [step, payMethod]);
 
@@ -101,6 +102,7 @@ export default function CheckoutPage() {
   };
 
   const saveAndConfirm = async (order) => {
+    let orderSaved = true;
     try {
       // Fetch authoritative prices + stock from DB — never trust client-supplied prices
       const { data: products } = await supabase
@@ -114,15 +116,6 @@ export default function CheckoutPage() {
         dispatch({ type: 'SET_TOAST', payload: { msg: 'Some items in your cart are no longer available — please update your cart', icon: '❌' } });
         return;
       }
-      for (const item of order.items) {
-        const product = products.find((p) => p.id === item.id);
-        if (!product || product.stock < item.qty) {
-          setProcessing(false);
-          payBtnRef.current?.focus();
-          dispatch({ type: 'SET_TOAST', payload: { msg: `"${product?.name || 'An item'}" is out of stock — please update your cart`, icon: '❌' } });
-          return;
-        }
-      }
 
       // Recompute total server-side to prevent price manipulation
       const serverSubtotal = products.reduce((sum, p) => {
@@ -134,15 +127,38 @@ export default function CheckoutPage() {
       const serverTotal = serverSubtotal + serverVat + serverDelivery;
       order = { ...order, total: serverTotal };
 
-      if (state.user?.id) await insertOrder(order, state.user.id);
-      decrementStock(order.items);
+      // Re-verify stock after price recomputation (prevents TOCTOU race)
+      for (const item of order.items) {
+        const product = products.find((p) => p.id === item.id);
+        if (!product || product.stock < item.qty) {
+          setProcessing(false);
+          payBtnRef.current?.focus();
+          dispatch({ type: 'SET_TOAST', payload: { msg: `"${product?.name || 'An item'}" is out of stock — please update your cart`, icon: '❌' } });
+          return;
+        }
+      }
+
+      try {
+        if (state.user?.id) await insertOrder(order, state.user.id);
+      } catch {
+        orderSaved = false;
+      }
+      try {
+        decrementStock(order.items);
+      } catch {
+        // stock sync is best-effort
+      }
     } catch {
-      // suppress — order proceeds, stock sync is best-effort
+      // suppress unexpected errors — order proceeds
     }
     sendReceiptEmail(order); // fire-and-forget
     order.items.forEach((item) => dispatch({ type: 'DECREMENT_STOCK', payload: { id: item.id, qty: item.qty } }));
     dispatch({ type: 'PLACE_ORDER', payload: order });
-    dispatch({ type: 'SET_TOAST', payload: { msg: 'Order placed! Receipt sent to your email 📧', icon: '✅' } });
+    if (!orderSaved) {
+      dispatch({ type: 'SET_TOAST', payload: { msg: "Order placed but couldn't save to your account — screenshot your receipt", icon: '⚠️' } });
+    } else {
+      dispatch({ type: 'SET_TOAST', payload: { msg: 'Order placed! Receipt sent to your email 📧', icon: '✅' } });
+    }
     setProcessing(false);
   };
 
@@ -249,6 +265,20 @@ export default function CheckoutPage() {
   };
 
   const stepLabels = ['Contact Info', 'Delivery', 'Payment'];
+
+  if (state.cart.length === 0) {
+    return (
+      <div style={{ maxWidth: 960, margin: '0 auto', padding: 'clamp(24px,5vw,40px) clamp(16px,4vw,24px)', textAlign: 'center' }}>
+        <div style={{ fontSize: 60, marginBottom: 16 }}>🛍️</div>
+        <h2 style={{ fontFamily: 'Playfair Display', fontSize: 24, marginBottom: 12 }}>Your cart is empty</h2>
+        <p style={{ color: 'var(--text-light)', marginBottom: 24 }}>Add some products before checking out.</p>
+        <button className="btn-primary" style={{ padding: '13px 32px' }}
+          onClick={() => dispatch({ type: 'SET_VIEW', payload: 'products' })}>
+          Go to Shop
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div style={{ maxWidth: 960, margin: '0 auto', padding: 'clamp(24px,5vw,40px) clamp(16px,4vw,24px)' }}>

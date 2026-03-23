@@ -38,12 +38,13 @@ function reducer(state, action) {
     case 'SET_BANK':
       return { ...state, bank: action.payload };
     case 'ADD_TO_CART': {
+      if (!action.payload?.id) return state;
       const exists = state.cart.find((i) => i.id === action.payload.id);
       if (exists)
         return {
           ...state,
           cart: state.cart.map((i) =>
-            i.id === action.payload.id ? { ...i, qty: i.qty + 1 } : i
+            i.id === action.payload.id ? { ...i, qty: Math.max(1, i.qty + 1) } : i
           ),
         };
       return { ...state, cart: [...state.cart, { ...action.payload, qty: 1 }] };
@@ -51,6 +52,7 @@ function reducer(state, action) {
     case 'REMOVE_FROM_CART':
       return { ...state, cart: state.cart.filter((i) => i.id !== action.payload) };
     case 'UPDATE_QTY':
+      if (action.payload.qty < 1) return state;
       return {
         ...state,
         cart: state.cart.map((i) =>

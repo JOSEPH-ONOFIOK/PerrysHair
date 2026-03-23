@@ -22,10 +22,6 @@ export const ORDER_STATUSES = [
   "Delivered",
 ];
 
-export const SAMPLE_ORDERS = [
-  { id: "PHR-2024-001", date: "2024-12-15", items: [HAIR_PRODUCTS[0], HAIR_PRODUCTS[4]], total: 116000, status: 5, delivery: "lagos", tracking: "DHL123456" },
-  { id: "PHR-2024-002", date: "2024-12-10", items: [HAIR_PRODUCTS[1]], total: 63240, status: 3, delivery: "nigeria", tracking: "GUO987654" },
-];
 
 export const HAIR_GRADIENTS = {
   bob1: "linear-gradient(135deg, #2a1a0a 0%, #1a1008 60%, #0a0805 100%)",

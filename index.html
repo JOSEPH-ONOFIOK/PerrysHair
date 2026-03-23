@@ -3,17 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-visual" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual" />
     <title>Perrys Hairline</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root" aria-live="polite" aria-label="Perry's Hairline store"></div>
     <noscript>
-      <style>body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#fdf0f5}</style>
-      <div style="text-align:center;padding:40px 20px;max-width:480px;margin:auto">
-        <h1 style="font-size:24px;margin-bottom:12px">Perry's Hairline</h1>
-        <p style="color:#555;line-height:1.6">This store requires JavaScript to browse products and complete purchases. Please enable JavaScript in your browser settings and reload the page.</p>
-      </div>
+      <style>body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#fdf0f5;color:#2A1020}</style>
+      <main style="text-align:center;padding:40px 20px;max-width:520px;margin:auto">
+        <h1 style="font-size:26px;margin-bottom:12px;font-family:Georgia,serif">Perry's Hairline</h1>
+        <p style="color:#444;line-height:1.7;margin-bottom:20px">This store requires JavaScript to browse and purchase. Please enable JavaScript in your browser and reload the page.</p>
+        <p style="color:#444;line-height:1.7;margin-bottom:8px">Need help or want to place an order directly? Contact us:</p>
+        <ul style="list-style:none;padding:0;margin:0 0 20px;line-height:2">
+          <li><a href="https://api.whatsapp.com/send/?phone=2349025373225" style="color:#C9973A;font-weight:700">WhatsApp: +234 902 537 3225</a></li>
+          <li><a href="https://www.instagram.com/perrys_hairline" style="color:#C9973A;font-weight:700">Instagram: @perrys_hairline</a></li>
+        </ul>
+        <p style="font-size:13px;color:#777">Perry's Hairline — Premium Human Hair, Lagos Nigeria</p>
+      </main>
     </noscript>
     <script type="module" src="/src/main.jsx"></script>
   </body>

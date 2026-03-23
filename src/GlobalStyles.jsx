@@ -26,8 +26,9 @@ const GlobalStyles = () => (
     body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text-dark); overflow-x: hidden; }
     h1,h2,h3,h4,h5 { font-family: 'Playfair Display', serif; }
     p, .section-subtitle { font-family: 'Cormorant Garamond', serif; letter-spacing: 0.01em; }
-    button { font-family: 'DM Sans', sans-serif; cursor: pointer; border: none; outline: none; }
-    input, select, textarea { font-family: 'DM Sans', sans-serif; outline: none; font-size: 16px; }
+    button { font-family: 'DM Sans', sans-serif; cursor: pointer; border: none; }
+    button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+    input, select, textarea { font-family: 'DM Sans', sans-serif; font-size: 16px; }
     a { text-decoration: none; color: inherit; }
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: var(--cream); }

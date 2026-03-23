@@ -111,9 +111,10 @@ function AppInner() {
 
   if (verifying) {
     return (
-      <div style={{ minHeight: '100vh', background: 'var(--cream)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+      <div style={{ minHeight: '100vh', background: 'var(--cream)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}
+        role="status" aria-live="polite" aria-label="Confirming payment">
         <GlobalStyles />
-        <div style={{ fontSize: 48 }}>⏳</div>
+        <div style={{ fontSize: 48 }} aria-hidden="true">⏳</div>
         <p style={{ fontFamily: 'Playfair Display', fontSize: 20, color: 'var(--espresso)' }}>Confirming your payment…</p>
         <p style={{ fontSize: 14, color: 'var(--text-light)' }}>Please wait, do not close this page.</p>
       </div>
@@ -122,9 +123,9 @@ function AppInner() {
 
   if (state.loading) {
     return (
-      <div style={{ minHeight: '100vh', background: 'var(--cream)' }}>
+      <div style={{ minHeight: '100vh', background: 'var(--cream)' }} role="status" aria-live="polite" aria-label="Loading store">
         <GlobalStyles />
-        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 24px' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 24px' }} aria-hidden="true">
           {/* Skeleton navbar */}
           <div style={{ height: 64, background: 'rgba(253,240,245,0.96)', marginBottom: 40, borderRadius: 8 }} />
           {/* Skeleton product cards */}
@@ -141,6 +142,7 @@ function AppInner() {
             ))}
           </div>
         </div>
+        <p style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0,0,0,0)' }}>Loading store content…</p>
         <style>{`@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }`}</style>
       </div>
     );
@@ -149,8 +151,17 @@ function AppInner() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--cream)' }}>
       <GlobalStyles />
-      <Navbar />
-      <main>{renderView()}</main>
+      {/* Skip link for keyboard / screen reader users */}
+      <a href="#main-content"
+        style={{ position: 'absolute', top: -40, left: 8, background: 'var(--espresso)', color: '#fff', padding: '8px 16px', borderRadius: 4, fontSize: 14, zIndex: 9999, textDecoration: 'none', transition: 'top 0.1s' }}
+        onFocus={(e) => { e.currentTarget.style.top = '8px'; }}
+        onBlur={(e) => { e.currentTarget.style.top = '-40px'; }}>
+        Skip to main content
+      </a>
+      <header>
+        <Navbar />
+      </header>
+      <main id="main-content">{renderView()}</main>
       {state.view === 'auth' && <AuthModal />}
       {state.view === 'reset-password' && <ResetPasswordModal />}
       <Toast />

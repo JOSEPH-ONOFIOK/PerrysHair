@@ -162,7 +162,9 @@ export default function HomePage() {
       <section style={{ background: 'linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%)', padding: '60px 24px', textAlign: 'center' }}>
         <h2 style={{ fontFamily: 'Playfair Display', fontSize: 'clamp(28px, 4vw, 42px)', color: 'white', marginBottom: 12 }}>Not sure what to pick?</h2>
         <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: 16, marginBottom: 28 }}>Chat with our hair experts for personalised recommendations</p>
-        <button className="btn-dark" style={{ fontSize: 15, padding: '14px 36px' }}>Get Expert Advice</button>
+        <a href="https://api.whatsapp.com/send/?phone=2349025373225&text&type=phone_number&app_absent=0" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+          <button className="btn-dark" style={{ fontSize: 15, padding: '14px 36px' }}>Get Expert Advice</button>
+        </a>
       </section>
 
       {/* Footer */}
@@ -188,6 +190,10 @@ export default function HomePage() {
               <a href="https://www.tiktok.com/@perrys_hairline" target="_blank" rel="noopener noreferrer"
                 style={{ fontSize: 13, marginBottom: 8, display: 'block', color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>
                 TikTok
+              </a>
+              <a href="https://api.whatsapp.com/send/?phone=2349025373225&text&type=phone_number&app_absent=0" target="_blank" rel="noopener noreferrer"
+                style={{ fontSize: 13, marginBottom: 8, display: 'block', color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>
+                WhatsApp
               </a>
             </div>
           </div>

@@ -6,6 +6,7 @@ import GlobalStyles from './GlobalStyles.jsx';
 import Navbar from './components/Navbar.jsx';
 import Toast from './components/Toast.jsx';
 import AuthModal from './components/AuthModal.jsx';
+import ResetPasswordModal from './components/ResetPasswordModal.jsx';
 
 // Pages
 import HomePage from './pages/HomePage.jsx';
@@ -148,6 +149,7 @@ function AppInner() {
       <Navbar />
       <main>{renderView()}</main>
       {state.view === 'auth' && <AuthModal />}
+      {state.view === 'reset-password' && <ResetPasswordModal />}
       <Toast />
     </div>
   );

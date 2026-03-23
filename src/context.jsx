@@ -142,6 +142,10 @@ export function AppProvider({ children }) {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (_event === 'PASSWORD_RECOVERY') {
+        dispatch({ type: 'SET_VIEW', payload: 'reset-password' });
+        return;
+      }
       if (session?.user) {
         loadUser(session.user);
         if (_event === 'SIGNED_IN' && localStorage.getItem('perrys_awaiting_confirm')) {

@@ -141,6 +141,23 @@ function AppInner() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [state.view]);
 
+  // Scroll reveal — watches for .reveal / .reveal-left / .reveal-right elements
+  useEffect(() => {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) { e.target.classList.add('revealed'); io.unobserve(e.target); }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+    const observe = () =>
+      document.querySelectorAll('.reveal,.reveal-left,.reveal-right').forEach((el) => {
+        if (!el.classList.contains('revealed')) io.observe(el);
+      });
+    observe();
+    const mo = new MutationObserver(observe);
+    mo.observe(document.body, { childList: true, subtree: true });
+    return () => { io.disconnect(); mo.disconnect(); };
+  }, [state.view]);
+
   useEffect(() => {
     document.title = PAGE_TITLES[state.view] ?? "Perry's Hairline";
   }, [state.view]);

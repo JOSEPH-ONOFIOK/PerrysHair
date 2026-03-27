@@ -122,6 +122,96 @@ const GlobalStyles = () => (
     @keyframes cardPop { 0% { transform: scale(1); } 40% { transform: scale(0.96); } 100% { transform: scale(1); } }
     .card-click { animation: cardPop 0.25s ease; }
 
+    /* ── Gold shimmer text ─────────────────────────────────────────────────── */
+    @keyframes goldShimmer {
+      0% { background-position: -250% center; }
+      100% { background-position: 250% center; }
+    }
+    .text-shimmer {
+      background: linear-gradient(90deg, var(--gold-dark) 0%, #f9e8b0 40%, var(--gold) 50%, #f9e8b0 60%, var(--gold-dark) 100%);
+      background-size: 250% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: goldShimmer 5s linear infinite;
+    }
+
+    /* ── Button shine sweep ────────────────────────────────────────────────── */
+    .btn-primary { position: relative; overflow: hidden; }
+    .btn-primary::after {
+      content: '';
+      position: absolute; top: -50%; left: -75%;
+      width: 50%; height: 200%;
+      background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.28) 50%, transparent 60%);
+      transition: left 0.55s ease;
+      pointer-events: none;
+    }
+    .btn-primary:hover::after { left: 135%; }
+
+    /* ── Hero load-in stagger ──────────────────────────────────────────────── */
+    @keyframes heroFadeUp {
+      from { opacity: 0; transform: translateY(22px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .hero-badge    { animation: heroFadeUp 0.5s ease 0.1s  both; }
+    .hero-title    { animation: heroFadeUp 0.6s ease 0.25s both; }
+    .hero-desc     { animation: heroFadeUp 0.6s ease 0.4s  both; }
+    .hero-btns     { animation: heroFadeUp 0.6s ease 0.55s both; }
+    .hero-stats    { animation: heroFadeUp 0.6s ease 0.7s  both; }
+    .hero-products { animation: heroFadeUp 0.7s ease 0.5s  both; }
+
+    /* ── Animated hero orb ─────────────────────────────────────────────────── */
+    @keyframes orbPulse {
+      0%, 100% { transform: translate(-50%,-50%) scale(1);    opacity: 0.08; }
+      50%       { transform: translate(-50%,-50%) scale(1.18); opacity: 0.16; }
+    }
+    .hero-orb { animation: orbPulse 7s ease-in-out infinite; }
+
+    /* ── Float animation ───────────────────────────────────────────────────── */
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-10px); }
+    }
+    .float-anim      { animation: float 4s ease-in-out infinite; }
+    .float-anim-slow { animation: float 6s ease-in-out infinite; }
+
+    /* ── Badge pulse ───────────────────────────────────────────────────────── */
+    @keyframes badgePulse {
+      0%, 100% { box-shadow: 0 0 0 0   rgba(201,151,58,0.5); }
+      60%       { box-shadow: 0 0 0 7px rgba(201,151,58,0); }
+    }
+    .badge-gold { animation: badgePulse 2.8s ease-in-out infinite; }
+
+    /* ── Scroll reveal ─────────────────────────────────────────────────────── */
+    .reveal       { opacity: 0; transform: translateY(36px);  transition: opacity 0.7s ease, transform 0.7s ease; }
+    .reveal-left  { opacity: 0; transform: translateX(-36px); transition: opacity 0.7s ease, transform 0.7s ease; }
+    .reveal-right { opacity: 0; transform: translateX(36px);  transition: opacity 0.7s ease, transform 0.7s ease; }
+    .reveal.revealed, .reveal-left.revealed, .reveal-right.revealed { opacity: 1; transform: translate(0); }
+    .stagger-1 { transition-delay: 0.1s; }
+    .stagger-2 { transition-delay: 0.2s; }
+    .stagger-3 { transition-delay: 0.3s; }
+    .stagger-4 { transition-delay: 0.4s; }
+    .stagger-5 { transition-delay: 0.5s; }
+
+    /* ── Card gold glow on hover ───────────────────────────────────────────── */
+    .card-glow:hover { box-shadow: 0 8px 40px rgba(201,151,58,0.2), 0 2px 8px rgba(180,60,100,0.08); }
+
+    /* ── WhatsApp button pulse ─────────────────────────────────────────────── */
+    @keyframes waPulse {
+      0%, 100% { box-shadow: 0 0 0 0   rgba(37,211,102,0.5); }
+      60%       { box-shadow: 0 0 0 10px rgba(37,211,102,0); }
+    }
+    .wa-pulse { animation: waPulse 2.2s ease-in-out infinite; }
+
+    /* ── Scale in ──────────────────────────────────────────────────────────── */
+    @keyframes scaleIn { from { opacity: 0; transform: scale(0.93); } to { opacity: 1; transform: scale(1); } }
+    .scale-in { animation: scaleIn 0.4s ease forwards; }
+
+    /* ── Respect reduced motion ────────────────────────────────────────────── */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
+
     .progress-bar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
     .progress-fill { height: 100%; background: var(--gold); border-radius: 2px; transition: width 0.5s ease; }
 

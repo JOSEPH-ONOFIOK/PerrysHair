@@ -66,21 +66,21 @@ export default function HomePage() {
     <div>
       {/* Hero */}
       <section style={{ background: 'linear-gradient(135deg, var(--espresso) 0%, var(--brown-mid) 50%, #2d1a08 100%)', minHeight: '80vh', display: 'flex', alignItems: 'center', padding: 'clamp(40px,8vw,80px) clamp(16px,5vw,24px)', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle at 70% 50%, rgba(201,151,58,0.15) 0%, transparent 60%)', pointerEvents: 'none' }} />
+        <div className="hero-orb" style={{ position: 'absolute', width: 560, height: 560, borderRadius: '50%', background: 'radial-gradient(circle, rgba(201,151,58,0.18) 0%, transparent 70%)', top: '50%', left: '60%', transform: 'translate(-50%,-50%)', pointerEvents: 'none' }} />
         <div className="hero-grid" style={{ maxWidth: 1200, margin: '0 auto', width: '100%', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, alignItems: 'center' }}>
           <div>
-            <span className="badge badge-gold" style={{ marginBottom: 20, display: 'inline-block' }}>Premium Hair Collection</span>
-            <h1 style={{ fontFamily: 'Playfair Display', fontSize: 'clamp(36px, 5vw, 64px)', fontWeight: 900, color: 'white', lineHeight: 1.1, marginBottom: 20 }}>
-              Crown Yourself<br /><em style={{ color: 'var(--gold-light)' }}>Every Day</em>
+            <span className="badge badge-gold hero-badge" style={{ marginBottom: 20, display: 'inline-block' }}>Premium Hair Collection</span>
+            <h1 className="hero-title" style={{ fontFamily: 'Playfair Display', fontSize: 'clamp(36px, 5vw, 64px)', fontWeight: 900, color: 'white', lineHeight: 1.1, marginBottom: 20 }}>
+              Crown Yourself<br /><em className="text-shimmer">Every Day</em>
             </h1>
-            <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.7)', lineHeight: 1.7, marginBottom: 32, maxWidth: 460 }}>
+            <p className="hero-desc" style={{ fontSize: 16, color: 'rgba(255,255,255,0.7)', lineHeight: 1.7, marginBottom: 32, maxWidth: 460 }}>
               Discover Lagos's finest collection of 100% human hair wigs and extensions. From sleek bobs to goddess curls your perfect hair awaits.
             </p>
-            <div className="hero-cta-btns" style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <div className="hero-cta-btns hero-btns" style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
               <button className="btn-primary" style={{ fontSize: 15, padding: '14px 32px' }} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'products' })}>Shop Collection</button>
               <button className="btn-outline" style={{ fontSize: 15, padding: '14px 32px', color: 'white', borderColor: 'rgba(255,255,255,0.4)' }} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'products' })}>View Lookbook</button>
             </div>
-            <div style={{ display: 'flex', gap: 32, marginTop: 40, flexWrap: 'wrap' }}>
+            <div className="hero-stats" style={{ display: 'flex', gap: 32, marginTop: 40, flexWrap: 'wrap' }}>
               {[['20,000+', 'Happy Clients'], ['100%', 'Human Hair'], ['Easy Tracking', 'Order Status']].map(([n, l]) => (
                 <div key={l}>
                   <div style={{ fontFamily: 'Playfair Display', fontSize: 28, fontWeight: 700, color: 'var(--gold-light)' }}>{n}</div>
@@ -89,7 +89,7 @@ export default function HomePage() {
               ))}
             </div>
           </div>
-          <div className="hide-mobile" style={{ display: 'flex', justifyContent: 'center', position: 'relative' }}>
+          <div className="hide-mobile hero-products" style={{ display: 'flex', justifyContent: 'center', position: 'relative' }}>
             <div style={{ position: 'absolute', width: 320, height: 320, borderRadius: '50%', background: 'rgba(201,151,58,0.08)', top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }} />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               {HAIR_PRODUCTS.slice(0, 4).map((p) => (
@@ -109,15 +109,15 @@ export default function HomePage() {
 
       {/* Shop by Style */}
       <section style={{ padding: '60px 24px', maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 40 }}>
+        <div className="reveal" style={{ textAlign: 'center', marginBottom: 40 }}>
           <h2 className="section-title">Shop by Style</h2>
           <p className="section-subtitle" style={{ marginTop: 8 }}>Find your perfect hair aesthetic</p>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
-          {sections.map((s) => (
-            <div key={s.name} className="card" style={{ padding: '32px 24px', textAlign: 'center', cursor: 'pointer', border: '1px solid var(--border)' }}
+          {sections.map((s, i) => (
+            <div key={s.name} className={`card card-glow reveal stagger-${i + 1}`} style={{ padding: '32px 24px', textAlign: 'center', cursor: 'pointer', border: '1px solid var(--border)' }}
               onClick={() => dispatch({ type: 'SET_VIEW', payload: 'products' })}>
-              <div style={{ fontSize: 36, marginBottom: 12 }}>{s.icon}</div>
+              <div className="float-anim" style={{ fontSize: 36, marginBottom: 12, display: 'inline-block', animationDelay: `${i * 0.4}s` }}>{s.icon}</div>
               <h3 style={{ fontFamily: 'Playfair Display', fontSize: 20, fontWeight: 700, marginBottom: 6 }}>{s.name}</h3>
               <p style={{ fontSize: 13, color: 'var(--text-light)' }}>{s.desc}</p>
               <button className="btn-outline" style={{ marginTop: 16, fontSize: 12, padding: '8px 18px' }}>Explore</button>
@@ -129,7 +129,7 @@ export default function HomePage() {
       {/* New In */}
       <section style={{ padding: '40px 24px 60px', background: 'var(--warm-white)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32, flexWrap: 'wrap', gap: 16 }}>
+          <div className="reveal" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32, flexWrap: 'wrap', gap: 16 }}>
             <div>
               <h2 className="section-title">New In Stock</h2>
               <p className="section-subtitle">Just arrived — get yours before they sell out</p>
@@ -145,7 +145,7 @@ export default function HomePage() {
       {/* Best Sellers */}
       <section style={{ padding: '60px 24px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32, flexWrap: 'wrap', gap: 16 }}>
+          <div className="reveal" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32, flexWrap: 'wrap', gap: 16 }}>
             <div>
               <h2 className="section-title">Best Sellers</h2>
               <p className="section-subtitle">Customer favourites, loved across Lagos & beyond</p>

@@ -15,7 +15,7 @@ export default function ProductCard({ product, compact = false }) {
 
   return (
     <div
-      className={`card${clicking ? ' card-click' : ''}`}
+      className={`card card-glow${clicking ? ' card-click' : ''}`}
       style={{ cursor: 'pointer' }}
       onClick={handleClick}
     >

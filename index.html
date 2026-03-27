@@ -41,10 +41,12 @@
       "@context": "https://schema.org",
       "@graph": [
         {
-          "@type": "ClothingStore",
+          "@type": ["Store", "HealthAndBeautyBusiness"],
           "@id": "https://www.perryshairline.store/#store",
           "name": "Perry's Hairline",
-          "description": "Premium human hair wigs, lace fronts and extensions based in Lagos, Nigeria. Delivering beauty across Nigeria and worldwide.",
+          "alternateName": "Perrys Hairline Wig Store",
+          "description": "Lagos's premier wig and hair extension store. Shop 100% raw human hair wigs, lace fronts, bone straight, curly, wavy and bouncy styles. Fast delivery across Nigeria and worldwide.",
+          "slogan": "Crown Yourself Every Day",
           "url": "https://www.perryshairline.store",
           "telephone": "+2349025373225",
           "priceRange": "₦₦₦",
@@ -60,6 +62,20 @@
             "https://www.tiktok.com/@perrys_hairline"
           ],
           "hasMap": "https://maps.google.com/?q=Lagos,Nigeria",
+          "hasOfferCatalog": {
+            "@type": "OfferCatalog",
+            "name": "Human Hair Collection",
+            "itemListElement": [
+              { "@type": "OfferCatalog", "name": "Wigs" },
+              { "@type": "OfferCatalog", "name": "Lace Front Wigs" },
+              { "@type": "OfferCatalog", "name": "Bone Straight Wigs" },
+              { "@type": "OfferCatalog", "name": "Curly Wigs" },
+              { "@type": "OfferCatalog", "name": "Wavy Wigs" },
+              { "@type": "OfferCatalog", "name": "Bob Wigs" },
+              { "@type": "OfferCatalog", "name": "Hair Extensions" },
+              { "@type": "OfferCatalog", "name": "Hair Bundles" }
+            ]
+          },
           "openingHoursSpecification": {
             "@type": "OpeningHoursSpecification",
             "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
@@ -70,7 +86,6 @@
             "@type": "ContactPoint",
             "telephone": "+2349025373225",
             "contactType": "customer service",
-            "contactOption": "TollFree",
             "availableLanguage": "English"
           }
         },

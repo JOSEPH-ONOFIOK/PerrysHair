@@ -17,6 +17,7 @@ const initialState = {
   authMode: 'login',
   adminTab: 'orders',
   loading: true,
+  needsProductRefresh: false,
 };
 
 function reducer(state, action) {
@@ -77,6 +78,7 @@ function reducer(state, action) {
         cart: [],
         view: 'order-tracking',
         selectedOrder: newOrder,
+        needsProductRefresh: true,
       };
     }
     case 'SET_TOAST':
@@ -135,6 +137,14 @@ export function AppProvider({ children }) {
       .then((products) => dispatch({ type: 'SET_PRODUCTS', payload: products }))
       .catch(() => dispatch({ type: 'SET_LOADING', payload: false }));
   }, []);
+
+  // Re-fetch products after an order to sync real stock from DB
+  useEffect(() => {
+    if (!state.needsProductRefresh) return;
+    fetchProducts()
+      .then((products) => dispatch({ type: 'SET_PRODUCTS', payload: products }))
+      .catch(() => {});
+  }, [state.needsProductRefresh]);
 
   // Listen to Supabase auth state changes
   useEffect(() => {

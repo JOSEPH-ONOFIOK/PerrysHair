@@ -36,4 +36,15 @@ export const HAIR_GRADIENTS = {
   straight2: "linear-gradient(135deg, #101010 0%, #050505 100%)",
 };
 
+export const QUALITY_TAGS = [
+  '100% Raw Hair',
+  'Donor Hair',
+  'No Shedding',
+  'Can Be Dyed',
+  'Long Lasting',
+  'Full Density',
+  'Heat Resistant',
+  'Pre-Plucked',
+];
+
 export const fmt = (n) => `₦${n.toLocaleString()}`;

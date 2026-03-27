@@ -243,6 +243,7 @@ export default function CheckoutPage() {
           currency: payCurrency,
           ref: order.id,
           label: "Perry's Hairline",
+          split_code: 'SPL_CdVGzimWep',
           callback_url: callbackUrl,
           metadata: { custom_fields: [{ display_name: 'Customer Name', variable_name: 'customer_name', value: form.name }] },
           callback: (transaction) => {
@@ -378,6 +379,11 @@ export default function CheckoutPage() {
                   </div>
                 </div>
               ))}
+              {payMethod === 'paystack' && (
+                <div style={{ background: '#fffbe6', border: '1px solid #f0d070', borderRadius: 8, padding: '12px 14px', marginBottom: 16, fontSize: 13, color: '#7a5800', lineHeight: 1.6 }}>
+                  <strong>Important:</strong> After completing payment on Paystack, <strong>return to this page</strong> to confirm your order. Do not close your browser — your order will be confirmed automatically once you're back.
+                </div>
+              )}
               {payMethod === 'transfer' && (
                 <div style={{ background: 'var(--warm-white)', border: '1px solid var(--border)', borderRadius: 8, padding: 16, marginBottom: 16 }}>
                   <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8 }}>Transfer Details</div>

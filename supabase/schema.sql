@@ -67,6 +67,11 @@ insert into public.settings (key, value) values
   ('international', '35000')
 on conflict (key) do nothing;
 
+-- New product fields (safe to run on existing DB)
+alter table public.products add column if not exists texture text;
+alter table public.products add column if not exists quality_tags text[] default '{}';
+alter table public.products add column if not exists selling_fast boolean default false;
+
 -- ============================================================
 -- ROW LEVEL SECURITY
 -- ============================================================
@@ -134,6 +139,20 @@ create policy "Admins can update orders"
 -- Order items
 drop policy if exists "Users can view own order items" on public.order_items;
 drop policy if exists "Users can insert order items" on public.order_items;
+drop policy if exists "Admins can delete orders" on public.orders;
+create policy "Admins can delete orders"
+  on public.orders for delete using (
+    exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
+  );
+drop policy if exists "Admins can delete order items" on public.order_items;
+create policy "Admins can delete order items"
+  on public.order_items for delete using (
+    exists (
+      select 1 from public.orders
+      where id = order_id and
+      exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
+    )
+  );
 create policy "Users can view own order items"
   on public.order_items for select using (
     exists (

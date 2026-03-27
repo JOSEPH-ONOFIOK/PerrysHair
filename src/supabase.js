@@ -34,12 +34,15 @@ function mapProduct(p) {
     rating: p.rating,
     reviews: p.reviews,
     bestSeller: p.best_seller,
+    sellingFast: p.selling_fast ?? false,
     stock: p.stock ?? 0,
     inStock: (p.stock ?? 0) > 0,
     length: p.length,
+    texture: p.texture || '',
     color: p.color,
     description: p.description,
     image: p.image,
+    qualityTags: p.quality_tags ?? [],
   };
 }
 
@@ -121,12 +124,15 @@ export async function insertProduct(product) {
       price: product.price,
       original_price: product.originalPrice || null,
       best_seller: product.bestSeller,
+      selling_fast: product.sellingFast ?? false,
       stock: product.stock ?? 0,
       in_stock: (product.stock ?? 0) > 0,
       length: product.length,
+      texture: product.texture || null,
       color: product.color,
       description: product.description,
       image: product.image,
+      quality_tags: product.qualityTags ?? [],
       rating: 0,
       reviews: 0,
     }])
@@ -145,12 +151,15 @@ export async function updateProduct(id, product) {
       price: product.price,
       original_price: product.originalPrice || null,
       best_seller: product.bestSeller,
+      selling_fast: product.sellingFast ?? false,
       stock: product.stock ?? 0,
       in_stock: (product.stock ?? 0) > 0,
       length: product.length,
+      texture: product.texture || null,
       color: product.color,
       description: product.description,
       image: product.image,
+      quality_tags: product.qualityTags ?? [],
     })
     .eq('id', id)
     .select()

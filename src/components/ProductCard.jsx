@@ -30,6 +30,9 @@ export default function ProductCard({ product, compact = false }) {
         {product.bestSeller && (
           <span className="badge badge-gold" style={{ position: 'absolute', top: 12, left: 12 }}>Best Seller</span>
         )}
+        {!product.bestSeller && product.sellingFast && (
+          <span className="badge" style={{ background: '#fff0f0', color: '#c0392b', position: 'absolute', top: 12, left: 12 }}>Selling Fast</span>
+        )}
         {!product.inStock && (
           <span className="badge badge-red" style={{ position: 'absolute', top: 12, right: 12 }}>Out of Stock</span>
         )}

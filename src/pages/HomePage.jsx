@@ -81,7 +81,7 @@ export default function HomePage() {
               <button className="btn-outline" style={{ fontSize: 15, padding: '14px 32px', color: 'white', borderColor: 'rgba(255,255,255,0.4)' }} onClick={() => dispatch({ type: 'SET_VIEW', payload: 'products' })}>View Lookbook</button>
             </div>
             <div style={{ display: 'flex', gap: 32, marginTop: 40, flexWrap: 'wrap' }}>
-              {[['2000+', 'Happy Clients'], ['100%', 'Human Hair'], ['72hr', 'Fast Delivery']].map(([n, l]) => (
+              {[['20,000+', 'Happy Clients'], ['100%', 'Human Hair'], ['Easy Tracking', 'Order Status']].map(([n, l]) => (
                 <div key={l}>
                   <div style={{ fontFamily: 'Playfair Display', fontSize: 28, fontWeight: 700, color: 'var(--gold-light)' }}>{n}</div>
                   <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>{l}</div>

@@ -1,6 +1,6 @@
 import { useContext, useState } from 'react';
 import { AppContext } from '../context.jsx';
-import { ORDER_STATUSES, CATEGORIES, HAIR_GRADIENTS, fmt } from '../data.js';
+import { ORDER_STATUSES, CATEGORIES, HAIR_GRADIENTS, QUALITY_TAGS, fmt } from '../data.js';
 import { insertProduct, updateProduct, deleteProduct, updateOrderStatus, deleteOrder, fetchOrders, saveDeliverySettings, saveBankDetails, uploadProductImage } from '../supabase.js';
 import { sendTrackingEmail } from '../email.js';
 
@@ -8,7 +8,8 @@ const GRADIENT_KEYS = Object.keys(HAIR_GRADIENTS);
 
 const EMPTY_FORM = {
   name: '', category: 'Bobs', price: '', originalPrice: '',
-  length: '', color: '', description: '', stock: 0, bestSeller: false,
+  length: '', texture: '', color: '', description: '', stock: 0,
+  bestSeller: false, sellingFast: false, qualityTags: [],
   image: GRADIENT_KEYS[0],
 };
 
@@ -26,7 +27,8 @@ export default function AdminDashboard() {
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [confirmDeleteOrder, setConfirmDeleteOrder] = useState(null); // order object to delete
+  const [confirmDeleteOrder, setConfirmDeleteOrder] = useState(null);
+  const [confirmResetAll, setConfirmResetAll] = useState(false);
 
   function handleFormChange(e) {
     const { name, value, type, checked } = e.target;
@@ -75,10 +77,13 @@ export default function AdminDashboard() {
       price: product.price,
       originalPrice: product.originalPrice ?? '',
       length: product.length,
+      texture: product.texture || '',
       color: product.color,
       description: product.description,
       stock: product.stock ?? 0,
       bestSeller: product.bestSeller,
+      sellingFast: product.sellingFast ?? false,
+      qualityTags: product.qualityTags ?? [],
       image: product.image,
     });
     setImageFile(null);
@@ -97,6 +102,10 @@ export default function AdminDashboard() {
 
   const tab = state.adminTab;
   const totalRevenue = state.orders.reduce((s, o) => s + o.total, 0);
+  const totalVat = state.orders.reduce((s, o) => {
+    const subtotal = (o.items || []).reduce((sum, i) => sum + i.price * i.qty, 0);
+    return s + Math.round(subtotal * 0.025);
+  }, 0);
   const lagosOrders = state.orders.filter((o) => o.delivery === 'lagos');
   const nigOrders = state.orders.filter((o) => o.delivery === 'nigeria');
   const intlOrders = state.orders.filter((o) => o.delivery === 'international');
@@ -115,6 +124,7 @@ export default function AdminDashboard() {
       <div className="admin-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 28 }}>
         {[
           ['Total Revenue', fmt(totalRevenue), '💰', '#E8F5EE', '#2D7A51'],
+          ['VAT Collected (2.5%)', fmt(totalVat), '🧾', '#F5F0FF', '#5B2DB0'],
           ['Total Orders', state.orders.length, '📦', '#FFF3E0', '#B06000'],
           ['Lagos Orders', lagosOrders.length, '🏙️', '#E8F0FF', '#2D4CB0'],
           ['National', nigOrders.length, '🇳🇬', '#FFF0F5', '#B02D5A'],
@@ -159,8 +169,11 @@ export default function AdminDashboard() {
                       try {
                         await updateOrderStatus(order.id, status);
                         dispatch({ type: 'UPDATE_ORDER_STATUS', payload: { id: order.id, status } });
-                        sendTrackingEmail(order, status); // fire-and-forget
-                        dispatch({ type: 'SET_TOAST', payload: { msg: 'Status updated!', icon: '✅' } });
+                        const emailSent = await sendTrackingEmail(order.id, status);
+                        dispatch({ type: 'SET_TOAST', payload: emailSent
+                          ? { msg: `Status updated & email sent to ${order.customer?.email || 'customer'}`, icon: '✅' }
+                          : { msg: 'Status updated — email failed to send', icon: '⚠️' }
+                        });
                       } catch {
                         dispatch({ type: 'SET_TOAST', payload: { msg: 'Failed to update status', icon: '❌' } });
                       }
@@ -209,11 +222,19 @@ export default function AdminDashboard() {
         return (
           <div>
             {/* Header row */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
               <h3 style={{ fontFamily: 'Playfair Display', fontSize: 17 }}>Order History ({state.orders.length})</h3>
-              <button className="btn-outline" style={{ fontSize: 13, padding: '8px 18px', display: 'flex', alignItems: 'center', gap: 6 }} onClick={downloadCSV}>
-                ⬇ Download CSV
-              </button>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button className="btn-outline" style={{ fontSize: 13, padding: '8px 18px', display: 'flex', alignItems: 'center', gap: 6 }} onClick={downloadCSV}>
+                  ⬇ Download CSV
+                </button>
+                <button
+                  style={{ fontSize: 13, padding: '8px 18px', background: 'none', border: '1px solid #ffcccc', borderRadius: 8, color: '#cc3333', cursor: 'pointer', fontWeight: 600 }}
+                  onClick={() => setConfirmResetAll(true)}
+                >
+                  🗑 Reset All Stats
+                </button>
+              </div>
             </div>
 
             {/* Zone summary cards */}
@@ -309,6 +330,13 @@ export default function AdminDashboard() {
                   <input className="input-field" name="length" value={form.length} onChange={handleFormChange} placeholder="e.g. 18 inch" required />
                 </div>
                 <div>
+                  <label style={{ fontSize: 12, color: 'var(--text-light)', display: 'block', marginBottom: 4 }}>Texture</label>
+                  <select className="input-field" name="texture" value={form.texture} onChange={handleFormChange}>
+                    <option value="">Select texture</option>
+                    {['Straight', 'Body Wave', 'Loose Wave', 'Deep Wave', 'Curly', 'Kinky Curly', 'Water Wave', 'Yaki'].map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div>
                   <label style={{ fontSize: 12, color: 'var(--text-light)', display: 'block', marginBottom: 4 }}>Color *</label>
                   <input className="input-field" name="color" value={form.color} onChange={handleFormChange} placeholder="e.g. Jet Black" required />
                 </div>
@@ -351,6 +379,22 @@ export default function AdminDashboard() {
                 <label style={{ fontSize: 12, color: 'var(--text-light)', display: 'block', marginBottom: 4 }}>Description *</label>
                 <textarea className="input-field" name="description" value={form.description} onChange={handleFormChange} placeholder="Describe the product..." required rows={3} style={{ resize: 'vertical' }} />
               </div>
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ fontSize: 12, color: 'var(--text-light)', display: 'block', marginBottom: 8 }}>Quality Tags</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                  {QUALITY_TAGS.map((tag) => (
+                    <label key={tag} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', background: form.qualityTags.includes(tag) ? 'rgba(201,151,58,0.12)' : 'var(--warm-white)', border: `1.5px solid ${form.qualityTags.includes(tag) ? 'var(--gold)' : 'var(--border)'}`, borderRadius: 20, padding: '5px 12px', transition: 'all 0.15s' }}>
+                      <input
+                        type="checkbox"
+                        style={{ display: 'none' }}
+                        checked={form.qualityTags.includes(tag)}
+                        onChange={(e) => setForm((f) => ({ ...f, qualityTags: e.target.checked ? [...f.qualityTags, tag] : f.qualityTags.filter((t) => t !== tag) }))}
+                      />
+                      {form.qualityTags.includes(tag) ? '✓ ' : ''}{tag}
+                    </label>
+                  ))}
+                </div>
+              </div>
               <div style={{ display: 'flex', gap: 16, marginBottom: 16, alignItems: 'flex-end' }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ fontSize: 12, color: 'var(--text-light)', display: 'block', marginBottom: 4 }}>Stock Quantity *</label>
@@ -359,6 +403,10 @@ export default function AdminDashboard() {
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, cursor: 'pointer', paddingBottom: 10 }}>
                   <input type="checkbox" name="bestSeller" checked={form.bestSeller} onChange={handleFormChange} />
                   Best Seller
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, cursor: 'pointer', paddingBottom: 10 }}>
+                  <input type="checkbox" name="sellingFast" checked={form.sellingFast} onChange={handleFormChange} />
+                  Selling Fast
                 </label>
               </div>
               <div style={{ display: 'flex', gap: 10 }}>
@@ -626,6 +674,38 @@ export default function AdminDashboard() {
               {bankForm && (
                 <button className="tab-btn" style={{ padding: '10px 18px' }} onClick={() => setBankForm(null)}>Reset</button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reset all orders confirmation modal */}
+      {confirmResetAll && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div className="card" style={{ padding: 32, maxWidth: 420, width: '100%', textAlign: 'center' }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>🗑️</div>
+            <h3 style={{ fontFamily: 'Playfair Display', fontSize: 20, marginBottom: 8 }}>Reset All Stats?</h3>
+            <p style={{ color: 'var(--text-mid)', fontSize: 14, marginBottom: 16 }}>
+              This will permanently delete <strong>all {state.orders.length} orders</strong> and reset revenue, VAT, and all stats back to <strong>₦0</strong>.
+            </p>
+            <p style={{ color: '#cc3333', fontSize: 13, marginBottom: 24 }}>This cannot be undone. Download CSV first if you need a backup.</p>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+              <button className="tab-btn" style={{ padding: '10px 24px' }} onClick={() => setConfirmResetAll(false)}>Cancel</button>
+              <button
+                style={{ background: '#cc3333', color: 'white', border: 'none', borderRadius: 8, padding: '10px 24px', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+                onClick={async () => {
+                  try {
+                    await Promise.all(state.orders.map((o) => deleteOrder(o.id)));
+                    dispatch({ type: 'SET_ORDERS', payload: [] });
+                    dispatch({ type: 'SET_TOAST', payload: { msg: 'All orders deleted — stats reset to ₦0', icon: '🗑️' } });
+                  } catch {
+                    dispatch({ type: 'SET_TOAST', payload: { msg: 'Failed to reset — try deleting orders individually', icon: '❌' } });
+                  }
+                  setConfirmResetAll(false);
+                }}
+              >
+                Yes, Reset Everything
+              </button>
             </div>
           </div>
         </div>

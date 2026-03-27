@@ -1,4 +1,33 @@
 import nodemailer from 'nodemailer';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
+
+async function fetchOrderById(orderId) {
+  const { data } = await supabase
+    .from('orders')
+    .select('*, order_items(*)')
+    .eq('id', orderId)
+    .single();
+  if (!data) return null;
+  return {
+    id: data.id,
+    date: data.date,
+    total: data.total,
+    status: data.status,
+    delivery: data.delivery,
+    tracking: data.tracking,
+    customer: { name: data.customer_name, email: data.customer_email },
+    items: (data.order_items || []).map((i) => ({
+      name: i.product_name,
+      price: i.product_price,
+      qty: i.qty,
+    })),
+  };
+}
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -143,29 +172,79 @@ function orderReceiptEmail({ order }) {
 function orderUpdateEmail({ order, status }) {
   const statusIndex = typeof status === 'number' ? status : ORDER_STATUSES.indexOf(status);
   const statusLabel = ORDER_STATUSES[statusIndex] || 'Updated';
+  const isCancelled = statusIndex === 6;
 
+  // Progress steps — show all 6 delivery steps (skip Cancelled in the tracker)
   const steps = ORDER_STATUSES.slice(0, 6).map((s, i) => {
-    const done = i <= statusIndex;
-    const active = i === statusIndex;
+    const done = !isCancelled && i <= statusIndex;
+    const active = !isCancelled && i === statusIndex;
     return `<tr>
       <td style="padding:8px 0;vertical-align:middle">
-        <span style="display:inline-block;width:20px;height:20px;border-radius:50%;background:${done ? '#C9973A' : '#eee'};color:${done ? '#fff' : '#bbb'};font-size:11px;font-weight:700;text-align:center;line-height:20px;margin-right:12px">${done ? '✓' : (i + 1)}</span>
-        <span style="font-size:14px;color:${active ? '#C9973A' : done ? '#3d1f1f' : '#bbb'};font-weight:${active ? '700' : '400'}">${esc(s)}${active ? ' ← Current' : ''}</span>
+        <span style="display:inline-block;width:22px;height:22px;border-radius:50%;background:${done ? '#C9973A' : '#eee'};color:${done ? '#fff' : '#bbb'};font-size:11px;font-weight:700;text-align:center;line-height:22px;margin-right:12px">${done ? '✓' : (i + 1)}</span>
+        <span style="font-size:14px;color:${active ? '#C9973A' : done ? '#3d1f1f' : '#bbb'};font-weight:${active ? '700' : '400'}">${esc(s)}${active ? ' &larr; Now' : ''}</span>
       </td>
     </tr>`;
   }).join('');
 
+  // Order items summary
+  const itemRows = (order.items || []).map((i) =>
+    `<tr>
+      <td style="padding:8px 0;border-bottom:1px solid #f5e8ee;font-size:14px;color:#333">${esc(i.name)} × ${Number(i.qty)}</td>
+      <td style="padding:8px 0;border-bottom:1px solid #f5e8ee;font-size:14px;color:#333;text-align:right;font-weight:700">₦${Number(i.price * i.qty).toLocaleString()}</td>
+    </tr>`
+  ).join('');
+
+  const custName = esc(order.customer?.name) || 'there';
+  const custAddress = [order.customer?.address, order.customer?.city, order.customer?.state].filter(Boolean).map(esc).join(', ');
+
+  const statusMessages = {
+    0: 'We have received your order and are getting it ready.',
+    1: 'Your payment has been confirmed. ',
+    2: "We're carefully preparing your order for dispatch.",
+    3: "Great news — your order is on its way!",
+    4: "Your order is out for delivery today. Stay close!",
+    5: "Your order has been delivered. We hope you love it! 💛",
+    6: "Your order has been cancelled. If this was a mistake, please contact us.",
+  };
+
   return {
     to: order.customer?.email,
-    subject: `Order Update: ${statusLabel} — ${esc(order.id)}`,
+    subject: isCancelled
+      ? `Order Cancelled — ${esc(order.id)}`
+      : `Order Update: ${statusLabel} — ${esc(order.id)}`,
     html: wrap(`
-      ${h1(`Order ${statusLabel}`)}
-      ${p(`Hi ${esc(order.customer?.name) || 'there'}, here's an update on your order <strong>${esc(order.id)}</strong>.`)}
-      <div style="background:#fdf0f5;border-radius:10px;padding:20px 24px;margin:20px 0">
-        <table width="100%" cellpadding="0" cellspacing="0">${steps}</table>
+      ${h1(isCancelled ? 'Order Cancelled' : `Update: ${statusLabel} 📦`)}
+      ${p(`Hi ${custName}, ${statusMessages[statusIndex] || "here's an update on your order."}`)}
+
+      <div style="background:#fdf0f5;border-radius:10px;padding:16px 20px;margin:20px 0">
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:8px">
+          <tr>
+            <td style="font-size:12px;color:#999">Order ID</td>
+            <td style="font-size:13px;color:#3d1f1f;font-weight:700;text-align:right">${esc(order.id)}</td>
+          </tr>
+          <tr>
+            <td style="font-size:12px;color:#999;padding-top:4px">Tracking No.</td>
+            <td style="font-size:13px;color:#C9973A;font-weight:700;text-align:right;padding-top:4px">${esc(order.tracking)}</td>
+          </tr>
+          ${custAddress ? `<tr><td style="font-size:12px;color:#999;padding-top:4px">Delivering to</td><td style="font-size:13px;color:#3d1f1f;text-align:right;padding-top:4px">${custAddress}</td></tr>` : ''}
+        </table>
       </div>
-      ${p(`Your tracking number is <strong style="color:#C9973A">${esc(order.tracking)}</strong>.`)}
-      ${p("Thank you for shopping with Perry's Hairline!")}
+
+      ${itemRows ? `<table width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0">
+        ${itemRows}
+        <tr>
+          <td style="padding-top:12px;font-size:15px;font-weight:900;color:#3d1f1f">Order Total</td>
+          <td style="padding-top:12px;font-size:15px;font-weight:900;color:#C9973A;text-align:right">₦${Number(order.total).toLocaleString()}</td>
+        </tr>
+      </table>` : ''}
+
+      ${!isCancelled ? `<div style="background:#fff8f0;border-radius:10px;padding:16px 20px;margin:20px 0">
+        <p style="font-size:12px;color:#999;margin:0 0 10px;text-transform:uppercase;letter-spacing:1px">Delivery Progress</p>
+        <table width="100%" cellpadding="0" cellspacing="0">${steps}</table>
+      </div>` : ''}
+
+      <div style="text-align:center">${btn('Track My Order', (process.env.APP_URL || 'https://perrys-hair.vercel.app') + '?view=orders')}</div>
+      ${p("Thank you for shopping with Perry's Hairline! 💛")}
     `),
   };
 }
@@ -218,7 +297,11 @@ export default async function handler(req, res) {
     if (type === 'welcome')          config = welcomeEmail(data);
     else if (type === 'forgot')      config = forgotPasswordEmail(data);
     else if (type === 'receipt')     config = orderReceiptEmail(data);
-    else if (type === 'order-update') config = orderUpdateEmail(data);
+    else if (type === 'order-update') {
+      const freshOrder = await fetchOrderById(data.orderId);
+      if (!freshOrder) return res.status(404).json({ error: 'Order not found' });
+      config = orderUpdateEmail({ order: freshOrder, status: data.status });
+    }
     else if (type === 'cart-reminder') config = cartReminderEmail(data);
     else return res.status(400).json({ error: 'Unknown email type' });
 

@@ -1,32 +1,34 @@
 import nodemailer from 'nodemailer';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
 
 async function fetchOrderById(orderId) {
-  const { data } = await supabase
-    .from('orders')
-    .select('*, order_items(*)')
-    .eq('id', orderId)
-    .single();
-  if (!data) return null;
-  return {
-    id: data.id,
-    date: data.date,
-    total: data.total,
-    status: data.status,
-    delivery: data.delivery,
-    tracking: data.tracking,
-    customer: { name: data.customer_name, email: data.customer_email },
-    items: (data.order_items || []).map((i) => ({
-      name: i.product_name,
-      price: i.product_price,
-      qty: i.qty,
-    })),
-  };
+  const base = process.env.VITE_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_KEY;
+  if (!base || !key) return null;
+  try {
+    const res = await fetch(
+      `${base}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&select=*,order_items(*)`,
+      { headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: 'application/json' } }
+    );
+    const rows = await res.json();
+    const data = Array.isArray(rows) ? rows[0] : null;
+    if (!data) return null;
+    return {
+      id: data.id,
+      date: data.date,
+      total: data.total,
+      status: data.status,
+      delivery: data.delivery,
+      tracking: data.tracking,
+      customer: { name: data.customer_name, email: data.customer_email },
+      items: (data.order_items || []).map((i) => ({
+        name: i.product_name,
+        price: i.product_price,
+        qty: i.qty,
+      })),
+    };
+  } catch {
+    return null;
+  }
 }
 
 const transporter = nodemailer.createTransport({

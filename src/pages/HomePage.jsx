@@ -61,7 +61,7 @@ export default function HomePage() {
   const { state, dispatch } = useContext(AppContext);
   const products = state.products;
   const bestSellers = products.filter((p) => p.bestSeller);
-  const topRated = [...products].sort((a, b) => b.rating - a.rating).slice(0, 6);
+  const topRated = [...products].sort((a, b) => b.rating - a.rating).slice(0, 8);
 
   return (
     <div>

@@ -1,4 +1,4 @@
-import { useContext, useState, useRef } from 'react';
+import { useContext, useState, useRef, useEffect } from 'react';
 import { AppContext } from '../context.jsx';
 import { ORDER_STATUSES, CATEGORIES, TEXTURES, HAIR_GRADIENTS, QUALITY_TAGS, fmt } from '../data.js';
 import { insertProduct, updateProduct, deleteProduct, updateOrderStatus, deleteOrder, fetchOrders, saveDeliverySettings, saveBankDetails, uploadProductImage, getStockSubscribers, clearStockNotifications } from '../supabase.js';
@@ -14,10 +14,15 @@ const EMPTY_FORM = {
 };
 
 
+const FORM_DRAFT_KEY = 'perrys_admin_form_draft';
+
 export default function AdminDashboard() {
   const { state, dispatch } = useContext(AppContext);
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [editingId, setEditingId] = useState(null);
+
+  // Restore draft from localStorage on mount
+  const savedDraft = (() => { try { return JSON.parse(localStorage.getItem(FORM_DRAFT_KEY)); } catch { return null; } })();
+  const [form, setForm] = useState(savedDraft?.form ?? EMPTY_FORM);
+  const [editingId, setEditingId] = useState(savedDraft?.editingId ?? null);
   const [pricingId, setPricingId] = useState(null);
   const [priceForm, setPriceForm] = useState({ price: '', originalPrice: '' });
   const [deliveryForm, setDeliveryForm] = useState(null);
@@ -30,6 +35,13 @@ export default function AdminDashboard() {
   const [confirmDeleteOrder, setConfirmDeleteOrder] = useState(null);
   const [confirmResetAll, setConfirmResetAll] = useState(false);
   const formRef = useRef(null);
+
+  // Persist form draft to localStorage whenever it changes
+  useEffect(() => {
+    const isDirty = JSON.stringify(form) !== JSON.stringify(EMPTY_FORM) || editingId !== null;
+    if (isDirty) localStorage.setItem(FORM_DRAFT_KEY, JSON.stringify({ form, editingId }));
+    else localStorage.removeItem(FORM_DRAFT_KEY);
+  }, [form, editingId]);
 
   function handleFormChange(e) {
     const { name, value, type, checked } = e.target;
@@ -75,6 +87,7 @@ export default function AdminDashboard() {
       setForm(EMPTY_FORM);
       setImageFile(null);
       setImagePreview(null);
+      localStorage.removeItem(FORM_DRAFT_KEY);
     } catch (err) {
       dispatch({ type: 'SET_TOAST', payload: { msg: err.message || 'Failed to save product', icon: '❌' } });
     }
@@ -315,9 +328,14 @@ export default function AdminDashboard() {
         <div>
           {/* Add / Edit form */}
           <div className="card" style={{ padding: 24, marginBottom: 28 }}>
-            <h3 style={{ fontFamily: 'Playfair Display', fontSize: 17, marginBottom: 16 }}>
+            <h3 style={{ fontFamily: 'Playfair Display', fontSize: 17, marginBottom: savedDraft ? 8 : 16 }}>
               {editingId !== null ? 'Edit Product' : 'Add New Product'}
             </h3>
+            {savedDraft && (
+              <div style={{ background: '#E8F5EE', border: '1px solid #b7dfca', borderRadius: 8, padding: '8px 14px', marginBottom: 16, fontSize: 13, color: '#2D7A51', display: 'flex', alignItems: 'center', gap: 8 }}>
+                ✅ Draft restored — your unsaved changes are back.
+              </div>
+            )}
             <form ref={formRef} onSubmit={handleSubmit}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, marginBottom: 12 }}>
                 <div>
@@ -427,7 +445,7 @@ export default function AdminDashboard() {
                   {uploading ? '⏳ Uploading...' : editingId !== null ? 'Save Changes' : 'Add Product'}
                 </button>
                 {editingId !== null && (
-                  <button type="button" className="tab-btn" onClick={() => { setEditingId(null); setForm(EMPTY_FORM); setImageFile(null); setImagePreview(null); }}>Cancel</button>
+                  <button type="button" className="tab-btn" onClick={() => { setEditingId(null); setForm(EMPTY_FORM); setImageFile(null); setImagePreview(null); localStorage.removeItem(FORM_DRAFT_KEY); }}>Cancel</button>
                 )}
               </div>
             </form>

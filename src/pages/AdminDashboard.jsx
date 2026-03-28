@@ -1,6 +1,6 @@
 import { useContext, useState } from 'react';
 import { AppContext } from '../context.jsx';
-import { ORDER_STATUSES, CATEGORIES, HAIR_GRADIENTS, QUALITY_TAGS, fmt } from '../data.js';
+import { ORDER_STATUSES, CATEGORIES, TEXTURES, HAIR_GRADIENTS, QUALITY_TAGS, fmt } from '../data.js';
 import { insertProduct, updateProduct, deleteProduct, updateOrderStatus, deleteOrder, fetchOrders, saveDeliverySettings, saveBankDetails, uploadProductImage, getStockSubscribers, clearStockNotifications } from '../supabase.js';
 import { sendTrackingEmail, sendBackInStockEmail } from '../email.js';
 
@@ -344,7 +344,7 @@ export default function AdminDashboard() {
                   <label style={{ fontSize: 12, color: 'var(--text-light)', display: 'block', marginBottom: 4 }}>Texture</label>
                   <select className="input-field" name="texture" value={form.texture} onChange={handleFormChange}>
                     <option value="">Select texture</option>
-                    {['Straight', 'Body Wave', 'Loose Wave', 'Deep Wave', 'Curly', 'Kinky Curly', 'Water Wave', 'Yaki'].map(t => <option key={t} value={t}>{t}</option>)}
+                    {TEXTURES.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
                 <div>

@@ -11,7 +11,9 @@ export const HAIR_PRODUCTS = [
   { id: 10, name: "Ultra Straight Lace", category: "Bone Straight", price: 78000, originalPrice: 90000, rating: 5.0, reviews: 156, bestSeller: true, inStock: true, length: "28 inch", color: "Jet Black", description: "Absolutely straight HD lace frontal wig. The finest quality raw Vietnamese hair. Mirror-like shine.", image: "straight2" },
 ];
 
-export const CATEGORIES = ["All", "Bobs", "Curly", "Wavy", "Bouncy", "Bone Straight"];
+export const CATEGORIES = ["All", "Bobs", "Curly", "Wavy", "Bouncy", "Bone Straight", "Straight", "Body Wave", "Loose Wave", "Deep Wave", "Kinky Curly", "Water Wave", "Yaki"];
+
+export const TEXTURES = ["Double Drawn Virgin", "Super Double Drawn", "Single Donor (Raw)", "Indonesia Hair"];
 
 export const ORDER_STATUSES = [
   "Order Placed",

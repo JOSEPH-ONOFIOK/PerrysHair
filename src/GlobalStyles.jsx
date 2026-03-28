@@ -272,6 +272,7 @@ const GlobalStyles = () => (
       .products-grid  { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
       .products-grid > * { height: 100%; }
       .style-grid     { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+      .style-grid > * { height: 100%; min-height: 180px; }
 
       /* Admin tabs — horizontal scroll instead of overflow */
       .admin-tabs {

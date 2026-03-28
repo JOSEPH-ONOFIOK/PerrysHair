@@ -11,6 +11,7 @@ const initialState = {
   delivery: DEFAULT_DELIVERY,
   bank: DEFAULT_BANK,
   view: 'home',
+  shopFilter: 'All',
   selectedProduct: null,
   selectedOrder: null,
   toast: null,
@@ -24,6 +25,8 @@ function reducer(state, action) {
   switch (action.type) {
     case 'SET_VIEW':
       return { ...state, view: action.payload };
+    case 'SET_SHOP_FILTER':
+      return { ...state, shopFilter: action.payload };
     case 'SET_USER':
       return { ...state, user: action.payload };
     case 'LOGOUT':

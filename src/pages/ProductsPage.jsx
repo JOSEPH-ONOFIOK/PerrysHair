@@ -1,4 +1,4 @@
-import { useContext, useState, useRef, useEffect } from 'react';
+import { useContext, useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { AppContext } from '../context.jsx';
 import ProductCard from '../components/ProductCard.jsx';
 import { CATEGORIES } from '../data.js';
@@ -68,10 +68,18 @@ function StyledSelect({ value, onChange, options, placeholder }) {
 }
 
 export default function ProductsPage() {
-  const { state } = useContext(AppContext);
-  const [cat, setCat] = useState('All');
+  const { state, dispatch } = useContext(AppContext);
+  const [cat, setCat] = useState(state.shopFilter || 'All');
   const [sort, setSort] = useState('default');
   const [search, setSearch] = useState('');
+
+  // Sync when shopFilter changes (e.g. navigating from home style cards)
+  useLayoutEffect(() => {
+    if (state.shopFilter && state.shopFilter !== cat) {
+      setCat(state.shopFilter);
+      dispatch({ type: 'SET_SHOP_FILTER', payload: 'All' }); // reset after reading
+    }
+  }, [state.shopFilter]);
 
   const categoryOptions = CATEGORIES.map((c) => ({ value: c, label: c }));
   const sortOptions = [

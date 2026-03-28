@@ -114,13 +114,14 @@ export default function HomePage() {
           <h2 className="section-title">Shop by Style</h2>
           <p className="section-subtitle" style={{ marginTop: 8 }}>Find your perfect hair aesthetic</p>
         </div>
-        <div className="style-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
+        <div className="style-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20, alignItems: 'stretch' }}>
           {sections.map((s, i) => (
-            <div key={s.name} className={`card card-glow reveal stagger-${i + 1}`} style={{ padding: '32px 24px', textAlign: 'center', cursor: 'pointer', border: '1px solid var(--border)' }}
-              onClick={() => dispatch({ type: 'SET_VIEW', payload: 'products' })}>
+            <div key={s.name} className={`card card-glow reveal stagger-${i + 1}`}
+              style={{ padding: '32px 24px', textAlign: 'center', cursor: 'pointer', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+              onClick={() => { dispatch({ type: 'SET_SHOP_FILTER', payload: s.name }); dispatch({ type: 'SET_VIEW', payload: 'products' }); }}>
               <div className="float-anim" style={{ fontSize: 36, marginBottom: 12, display: 'inline-block', animationDelay: `${i * 0.4}s` }}>{s.icon}</div>
               <h3 style={{ fontFamily: 'Playfair Display', fontSize: 20, fontWeight: 700, marginBottom: 6 }}>{s.name}</h3>
-              <p style={{ fontSize: 13, color: 'var(--text-light)' }}>{s.desc}</p>
+              <p style={{ fontSize: 13, color: 'var(--text-light)', flex: 1 }}>{s.desc}</p>
               <button className="btn-outline" style={{ marginTop: 16, fontSize: 12, padding: '8px 18px' }}>Explore</button>
             </div>
           ))}

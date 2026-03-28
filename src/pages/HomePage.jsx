@@ -61,6 +61,7 @@ export default function HomePage() {
   const { state, dispatch } = useContext(AppContext);
   const products = state.products;
   const bestSellers = products.filter((p) => p.bestSeller);
+  const topRated = [...products].sort((a, b) => b.rating - a.rating).slice(0, 6);
 
   return (
     <div>
@@ -155,7 +156,7 @@ export default function HomePage() {
             <button className="btn-outline" onClick={() => dispatch({ type: 'SET_VIEW', payload: 'products' })}>View Shop</button>
           </div>
           <div className="products-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 20 }}>
-            {products.map((p) => <ProductCard key={p.id} product={p} />)}
+            {topRated.map((p) => <ProductCard key={p.id} product={p} />)}
           </div>
           {products.length === 0 && (
             <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-light)' }}>Loading collection...</div>

@@ -3,7 +3,7 @@ import { AppContext } from '../context.jsx';
 import HairVisual from '../components/HairVisual.jsx';
 import ProductCard from '../components/ProductCard.jsx';
 import { fmt } from '../data.js';
-import { fetchReviews, upsertReview } from '../supabase.js';
+import { fetchReviews, upsertReview, subscribeToStockNotification } from '../supabase.js';
 
 function Stars({ rating, size = 16, interactive = false, onRate }) {
   const [hovered, setHovered] = useState(0);
@@ -45,6 +45,9 @@ export default function ProductDetail() {
   const [myReview, setMyReview] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [lightbox, setLightbox] = useState(false);
+  const [notified, setNotified] = useState(false);
+  const [notifying, setNotifying] = useState(false);
 
   const related = p
     ? state.products.filter((x) => x.category === p.category && x.id !== p.id).slice(0, 3)
@@ -71,6 +74,19 @@ export default function ProductDetail() {
 
   // Use live product from state so rating updates instantly
   const product = state.products.find((x) => x.id === p.id) || p;
+
+  async function handleNotifyMe() {
+    if (!state.user) { dispatch({ type: 'SET_AUTH_MODE', payload: 'login' }); return; }
+    setNotifying(true);
+    try {
+      await subscribeToStockNotification(state.user.id, product.id, state.user.email);
+      setNotified(true);
+      dispatch({ type: 'SET_TOAST', payload: { msg: "We'll email you when it's back in stock!", icon: '🔔' } });
+    } catch {
+      dispatch({ type: 'SET_TOAST', payload: { msg: 'Could not save notification', icon: '❌' } });
+    }
+    setNotifying(false);
+  }
 
   async function handleSubmitReview(e) {
     e.preventDefault();
@@ -99,10 +115,16 @@ export default function ProductDetail() {
       <div className="product-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'clamp(24px,5vw,48px)', alignItems: 'start' }}>
         {/* Image */}
         <div>
-          <div style={{ background: 'linear-gradient(135deg, var(--blush), var(--cream))', borderRadius: 16, padding: 'clamp(24px,5vw,48px)', display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
+          <div
+            onClick={() => setLightbox(true)}
+            style={{ background: 'linear-gradient(135deg, var(--blush), var(--cream))', borderRadius: 16, padding: 'clamp(24px,5vw,48px)', display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative', cursor: 'zoom-in', transition: 'transform 0.2s, box-shadow 0.2s' }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.13)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+          >
             <HairVisual image={product.image} size={240} />
             {product.bestSeller && <span className="badge badge-gold" style={{ position: 'absolute', top: 16, left: 16 }}>Best Seller</span>}
             {!product.bestSeller && product.sellingFast && <span className="badge" style={{ background: '#fff0f0', color: '#c0392b', position: 'absolute', top: 16, left: 16 }}>Selling Fast 🔥</span>}
+            <span style={{ position: 'absolute', bottom: 12, right: 12, background: 'rgba(0,0,0,0.35)', color: 'white', borderRadius: 6, padding: '4px 8px', fontSize: 11, pointerEvents: 'none' }}>🔍 Click to preview</span>
           </div>
           <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
             {[
@@ -146,15 +168,15 @@ export default function ProductDetail() {
           )}
 
           <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
-            <button className="btn-primary" style={{ flex: 1, minWidth: 140, justifyContent: 'center', padding: '15px', fontSize: 15 }}
-              disabled={!product.inStock}
+            <button className="btn-primary" style={{ flex: 1, minWidth: 140, justifyContent: 'center', padding: '15px', fontSize: 15, background: product.inStock ? undefined : 'var(--text-light)' }}
               onClick={() => {
                 dispatch({ type: 'ADD_TO_CART', payload: product });
-                dispatch({ type: 'SET_TOAST', payload: { msg: 'Added to cart!', icon: '🛍️' } });
+                dispatch({ type: 'SET_TOAST', payload: { msg: product.inStock ? 'Added to cart!' : 'Saved — checkout when it restocks!', icon: product.inStock ? '🛍️' : '🔔' } });
               }}>
-              {product.inStock ? '🛍️ Add to Cart' : 'Out of Stock'}
+              {product.inStock ? '🛍️ Add to Cart' : '🛍️ Save to Cart'}
             </button>
-            <button className="btn-dark" style={{ padding: '15px 24px' }}
+            <button className="btn-dark" style={{ padding: '15px 24px', opacity: product.inStock ? 1 : 0.5, cursor: product.inStock ? 'pointer' : 'not-allowed' }}
+              disabled={!product.inStock}
               onClick={() => {
                 dispatch({ type: 'ADD_TO_CART', payload: product });
                 dispatch({ type: 'SET_VIEW', payload: 'checkout' });
@@ -162,20 +184,29 @@ export default function ProductDetail() {
               Buy Now
             </button>
           </div>
+          {!product.inStock && (
+            <button
+              onClick={handleNotifyMe}
+              disabled={notified || notifying}
+              style={{ width: '100%', marginBottom: 16, padding: '12px', background: notified ? '#E8F5EE' : 'var(--warm-white)', border: `1.5px solid ${notified ? '#2D7A51' : 'var(--border)'}`, borderRadius: 8, color: notified ? '#2D7A51' : 'var(--text-mid)', fontWeight: 600, fontSize: 14, cursor: notified ? 'default' : 'pointer', transition: 'all 0.2s', boxSizing: 'border-box' }}
+            >
+              {notified ? '✅ You\'ll be notified when it\'s back!' : notifying ? 'Saving...' : '🔔 Notify me when back in stock'}
+            </button>
+          )}
           <a
-            href={`https://api.whatsapp.com/send/?phone=2349025373225&text=${encodeURIComponent(`Hi, I want to order the ${product.name} (${product.length}, ${product.color}) from Perry's Hairline`)}&type=phone_number&app_absent=0`}
+            href={`https://api.whatsapp.com/send/?phone=2349025373225&text=${encodeURIComponent(`Hi, I'd like to ask about... ${product.name}`)}&type=phone_number&app_absent=0`}
             target="_blank"
             rel="noopener noreferrer"
             className="wa-pulse"
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '13px', background: '#25D366', color: 'white', borderRadius: 10, fontWeight: 600, fontSize: 15, textDecoration: 'none', marginBottom: 28, boxSizing: 'border-box' }}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-            Order on WhatsApp
+            Contact for more enquiry
           </a>
 
           <div style={{ background: 'var(--warm-white)', borderRadius: 10, padding: 20, border: '1px solid var(--border)' }}>
             {[
-              ['🚀', 'Fast Delivery', 'Lagos: Same Day | Nigeria: 1-3 days'],
+              ['🚀', 'Fast Delivery', 'Within a week or 6 working days'],
               ['🔄', 'Easy Returns', '7-day hassle-free returns'],
               ['✅', 'Authentic Hair', '100% human hair guarantee'],
               ['📦', 'Secure Packaging', 'Every order professionally packed'],
@@ -267,11 +298,34 @@ export default function ProductDetail() {
         )}
       </div>
 
+      {/* Image Lightbox */}
+      {lightbox && (
+        <div
+          onClick={() => setLightbox(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'fadeIn 0.2s ease', cursor: 'zoom-out' }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: 'linear-gradient(135deg, var(--blush), var(--cream))', borderRadius: 20, padding: 48, display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative', animation: 'scaleIn 0.25s cubic-bezier(0.34,1.56,0.64,1)' }}
+          >
+            <button
+              onClick={() => setLightbox(false)}
+              style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(0,0,0,0.4)', border: 'none', color: 'white', borderRadius: '50%', width: 32, height: 32, fontSize: 18, cursor: 'pointer', lineHeight: 1 }}
+            >×</button>
+            <HairVisual image={product.image} size={340} />
+          </div>
+          <style>{`
+            @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+            @keyframes scaleIn { from { transform: scale(0.7); opacity: 0 } to { transform: scale(1); opacity: 1 } }
+          `}</style>
+        </div>
+      )}
+
       {/* Related */}
       {related.length > 0 && (
         <div style={{ marginTop: 60 }}>
           <h2 style={{ fontFamily: 'Playfair Display', fontSize: 24, marginBottom: 24 }}>You Might Also Love</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 20 }}>
+          <div className="products-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 20 }}>
             {related.map((x) => <ProductCard key={x.id} product={x} compact />)}
           </div>
         </div>

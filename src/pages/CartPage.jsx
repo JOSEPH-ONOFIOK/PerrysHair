@@ -6,6 +6,11 @@ import { fmt } from '../data.js';
 export default function CartPage() {
   const { state, dispatch } = useContext(AppContext);
   const { cart } = state;
+  const outOfStockItems = cart.filter((item) => {
+    const live = state.products.find((p) => p.id === item.id);
+    return live ? !live.inStock : false;
+  });
+  const hasOutOfStock = outOfStockItems.length > 0;
   const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
   const service = Math.round(subtotal * 0.025);
   const total = subtotal + service;
@@ -82,7 +87,20 @@ export default function CartPage() {
                 <span style={{ color: 'var(--gold)' }}>{fmt(total)}</span>
               </div>
             </div>
-            <button className="btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '14px', fontSize: 15 }}
+            {hasOutOfStock && (
+              <div style={{ background: '#fff8f0', border: '1px solid #f5c6c6', borderRadius: 8, padding: '12px 14px', marginBottom: 12, fontSize: 13, color: '#856404' }}>
+                <div style={{ fontWeight: 600, marginBottom: 6 }}>⚠️ Some items are out of stock:</div>
+                {outOfStockItems.map(i => <div key={i.id} style={{ marginBottom: 2 }}>• {i.name}</div>)}
+                <button
+                  onClick={() => outOfStockItems.forEach(i => dispatch({ type: 'REMOVE_FROM_CART', payload: i.id }))}
+                  style={{ marginTop: 8, background: 'none', border: '1px solid #c0392b', color: '#c0392b', borderRadius: 6, padding: '5px 12px', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}
+                >
+                  Remove out-of-stock items
+                </button>
+              </div>
+            )}
+            <button className="btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '14px', fontSize: 15, opacity: hasOutOfStock ? 0.5 : 1, cursor: hasOutOfStock ? 'not-allowed' : 'pointer' }}
+              disabled={hasOutOfStock}
               onClick={() => {
                 if (!state.user) dispatch({ type: 'SET_AUTH_MODE', payload: 'login' });
                 else dispatch({ type: 'SET_VIEW', payload: 'checkout' });

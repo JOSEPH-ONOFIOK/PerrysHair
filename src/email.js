@@ -14,7 +14,8 @@ async function callEmail(type, data) {
   }
 }
 
-export const sendWelcomeEmail    = (name, email)       => callEmail('welcome', { name, email });
-export const sendReceiptEmail    = (order)             => callEmail('receipt', { order });
-export const sendTrackingEmail   = (orderId, status)   => callEmail('order-update', { orderId, status });
-export const sendForgotPassword  = (email, resetUrl)   => callEmail('forgot', { email, resetUrl });
+export const sendWelcomeEmail       = (name, email)            => callEmail('welcome', { name, email });
+export const sendReceiptEmail       = (order)                  => callEmail('receipt', { order });
+export const sendTrackingEmail      = (orderId, status)        => callEmail('order-update', { orderId, status });
+export const sendForgotPassword     = (email, resetUrl)        => callEmail('forgot', { email, resetUrl });
+export const sendBackInStockEmail   = (email, productName)     => callEmail('back-in-stock', { email, productName });

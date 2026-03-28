@@ -252,14 +252,38 @@ function orderUpdateEmail({ order, status }) {
 }
 
 
+function backInStockEmail({ email, productName }) {
+  const safeName = esc(productName);
+  return {
+    to: email,
+    subject: `${safeName} is back in stock! 🎉`,
+    html: wrap(`
+      ${h1('Good news — it\'s back! 🎉')}
+      ${p(`The <strong>${safeName}</strong> you saved is back in stock. Grab it before it sells out again!`)}
+      <div style="text-align:center">${btn('Shop Now', process.env.APP_URL || 'https://perrys-hair.vercel.app')}</div>
+      ${p('Stock is limited — act fast!')}
+    `),
+  };
+}
+
 function cartReminderEmail({ name, email, items }) {
   const safeName = esc(name) || 'beautiful';
-  const itemList = items.map((i) =>
+  const inStock = items.filter((i) => i.in_stock !== false);
+  const outOfStock = items.filter((i) => i.in_stock === false);
+
+  const itemList = (list) => list.map((i) =>
     `<tr>
       <td style="padding:8px 0;font-size:14px;color:#333;border-bottom:1px solid #f5e8ee">${esc(i.product_name)}</td>
       <td style="padding:8px 0;font-size:14px;color:#C9973A;font-weight:700;text-align:right;border-bottom:1px solid #f5e8ee">${fmt(i.product_price)}</td>
     </tr>`
   ).join('');
+
+  const outOfStockSection = outOfStock.length ? `
+    <div style="background:#fff8f0;border-radius:8px;padding:14px 18px;margin:16px 0">
+      <p style="font-size:13px;color:#856404;font-weight:700;margin:0 0 8px">⚠️ These items are currently out of stock:</p>
+      <table width="100%" cellpadding="0" cellspacing="0">${itemList(outOfStock)}</table>
+      <p style="font-size:12px;color:#999;margin:8px 0 0">We'll email you as soon as they're available again.</p>
+    </div>` : '';
 
   return {
     to: email,
@@ -267,8 +291,9 @@ function cartReminderEmail({ name, email, items }) {
     html: wrap(`
       ${h1('Your cart misses you! 💛')}
       ${p(`Hi ${safeName}, you left some gorgeous pieces in your cart. Don't let them get away!`)}
-      <table width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0">${itemList}</table>
-      <div style="text-align:center">${btn('Complete My Order', process.env.APP_URL || 'https://perrys-hair.vercel.app')}</div>
+      ${inStock.length ? `<table width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0">${itemList(inStock)}</table>` : ''}
+      ${outOfStockSection}
+      ${inStock.length ? `<div style="text-align:center">${btn('Complete My Order', process.env.APP_URL || 'https://perrys-hair.vercel.app')}</div>` : ''}
       ${p('Stock is limited — these beauties might not last long.')}
     `),
   };
@@ -304,7 +329,8 @@ export default async function handler(req, res) {
       if (!freshOrder) return res.status(404).json({ error: 'Order not found' });
       config = orderUpdateEmail({ order: freshOrder, status: data.status });
     }
-    else if (type === 'cart-reminder') config = cartReminderEmail(data);
+    else if (type === 'cart-reminder')  config = cartReminderEmail(data);
+    else if (type === 'back-in-stock')  config = backInStockEmail(data);
     else return res.status(400).json({ error: 'Unknown email type' });
 
     if (!config.to) return res.status(400).json({ error: 'No recipient email' });

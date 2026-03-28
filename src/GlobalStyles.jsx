@@ -264,11 +264,14 @@ const GlobalStyles = () => (
       .mobile-menu-btn { display: flex; }
 
       /* Grids */
-      .checkout-grid { grid-template-columns: 1fr !important; }
-      .product-grid  { grid-template-columns: 1fr !important; }
-      .hero-grid     { grid-template-columns: 1fr !important; }
-      .cart-grid     { grid-template-columns: 1fr !important; }
-      .admin-stats   { grid-template-columns: repeat(2, 1fr) !important; }
+      .checkout-grid  { grid-template-columns: 1fr !important; }
+      .product-grid   { grid-template-columns: 1fr !important; }
+      .hero-grid      { grid-template-columns: 1fr !important; }
+      .cart-grid      { grid-template-columns: 1fr !important; }
+      .admin-stats    { grid-template-columns: repeat(2, 1fr) !important; }
+      .products-grid  { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+      .products-grid > * { height: 100%; }
+      .style-grid     { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
 
       /* Admin tabs — horizontal scroll instead of overflow */
       .admin-tabs {

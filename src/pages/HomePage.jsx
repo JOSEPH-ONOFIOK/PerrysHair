@@ -113,7 +113,7 @@ export default function HomePage() {
           <h2 className="section-title">Shop by Style</h2>
           <p className="section-subtitle" style={{ marginTop: 8 }}>Find your perfect hair aesthetic</p>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
+        <div className="style-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
           {sections.map((s, i) => (
             <div key={s.name} className={`card card-glow reveal stagger-${i + 1}`} style={{ padding: '32px 24px', textAlign: 'center', cursor: 'pointer', border: '1px solid var(--border)' }}
               onClick={() => dispatch({ type: 'SET_VIEW', payload: 'products' })}>
@@ -136,7 +136,7 @@ export default function HomePage() {
             </div>
             <button className="btn-outline" onClick={() => dispatch({ type: 'SET_VIEW', payload: 'products' })}>View All</button>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 20 }}>
+          <div className="products-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 20 }}>
             {recent.map((p) => <ProductCard key={p.id} product={p} />)}
           </div>
         </div>
@@ -152,7 +152,7 @@ export default function HomePage() {
             </div>
             <button className="btn-outline" onClick={() => dispatch({ type: 'SET_VIEW', payload: 'products' })}>Shop All</button>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 20 }}>
+          <div className="products-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 20 }}>
             {bestSellers.map((p) => <ProductCard key={p.id} product={p} />)}
           </div>
         </div>

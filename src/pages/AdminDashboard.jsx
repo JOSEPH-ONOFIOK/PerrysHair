@@ -1,8 +1,8 @@
 import { useContext, useState } from 'react';
 import { AppContext } from '../context.jsx';
 import { ORDER_STATUSES, CATEGORIES, HAIR_GRADIENTS, QUALITY_TAGS, fmt } from '../data.js';
-import { insertProduct, updateProduct, deleteProduct, updateOrderStatus, deleteOrder, fetchOrders, saveDeliverySettings, saveBankDetails, uploadProductImage } from '../supabase.js';
-import { sendTrackingEmail } from '../email.js';
+import { insertProduct, updateProduct, deleteProduct, updateOrderStatus, deleteOrder, fetchOrders, saveDeliverySettings, saveBankDetails, uploadProductImage, getStockSubscribers, clearStockNotifications } from '../supabase.js';
+import { sendTrackingEmail, sendBackInStockEmail } from '../email.js';
 
 const GRADIENT_KEYS = Object.keys(HAIR_GRADIENTS);
 
@@ -51,8 +51,19 @@ export default function AdminDashboard() {
         stock: Number(form.stock) || 0,
       };
       if (editingId !== null) {
+        const prevProduct = state.products.find((p) => p.id === editingId);
+        const wasOutOfStock = !prevProduct?.inStock;
+        const nowInStock = Number(form.stock) > 0;
         const updated = await updateProduct(editingId, product);
         dispatch({ type: 'EDIT_PRODUCT', payload: updated });
+        // Send back-in-stock emails if product was restocked
+        if (wasOutOfStock && nowInStock) {
+          getStockSubscribers(editingId).then(async (subscribers) => {
+            if (!subscribers.length) return;
+            await Promise.all(subscribers.map((s) => sendBackInStockEmail(s.email, updated.name)));
+            await clearStockNotifications(editingId);
+          }).catch(() => {});
+        }
         dispatch({ type: 'SET_TOAST', payload: { msg: 'Product updated!', icon: '✅' } });
         setEditingId(null);
       } else {

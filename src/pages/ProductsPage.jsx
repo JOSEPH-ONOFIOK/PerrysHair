@@ -51,7 +51,7 @@ export default function ProductsPage() {
 
       <div style={{ fontSize: 13, color: 'var(--text-light)', marginBottom: 20 }}>{prods.length} products found</div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 24 }}>
+      <div className="products-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 24 }}>
         {prods.map((p) => <ProductCard key={p.id} product={p} />)}
       </div>
 

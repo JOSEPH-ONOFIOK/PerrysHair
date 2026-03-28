@@ -356,6 +356,28 @@ export async function syncCart(userId, items) {
   );
 }
 
+// ── Stock Notifications ───────────────────────────────────────────────────────
+
+export async function subscribeToStockNotification(userId, productId, email) {
+  const { error } = await supabase
+    .from('stock_notifications')
+    .upsert({ user_id: userId, product_id: productId, email }, { onConflict: 'user_id,product_id' });
+  if (error) throw error;
+}
+
+export async function getStockSubscribers(productId) {
+  const { data, error } = await supabase
+    .from('stock_notifications')
+    .select('email, user_id')
+    .eq('product_id', productId);
+  if (error) throw error;
+  return data || [];
+}
+
+export async function clearStockNotifications(productId) {
+  await supabase.from('stock_notifications').delete().eq('product_id', productId);
+}
+
 // ── Product Image Upload ──────────────────────────────────────────────────────
 
 export async function uploadProductImage(file) {

@@ -137,9 +137,44 @@ function AppInner() {
       .finally(() => setVerifying(false));
   }, []);
 
+  // Persist current view so refresh lands on the same page
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
-  }, [state.view]);
+    const skip = ['auth', 'reset-password'];
+    if (skip.includes(state.view)) return;
+    try {
+      sessionStorage.setItem('perrys_view', JSON.stringify({
+        view: state.view,
+        productId: state.selectedProduct?.id ?? null,
+        orderId: state.selectedOrder?.id ?? null,
+      }));
+    } catch {}
+  }, [state.view, state.selectedProduct?.id, state.selectedOrder?.id]);
+
+  // On mount: restore view from sessionStorage once products have loaded
+  useEffect(() => {
+    if (state.loading) return; // wait for products
+    try {
+      const raw = sessionStorage.getItem('perrys_view');
+      if (!raw) return;
+      const { view, productId, orderId } = JSON.parse(raw);
+      // Only restore once — don't fight user navigation
+      sessionStorage.removeItem('perrys_view');
+      if (!view || view === 'home') return;
+
+      if (view === 'product-detail' && productId) {
+        const product = state.products.find((p) => p.id === productId);
+        if (product) { dispatch({ type: 'SELECT_PRODUCT', payload: product }); return; }
+      }
+      if (view === 'order-tracking' && orderId) {
+        const order = state.orders.find((o) => o.id === orderId);
+        if (order) { dispatch({ type: 'SELECT_ORDER', payload: order }); return; }
+      }
+      // For all other views just restore directly
+      const simple = ['products', 'cart', 'history', 'admin', 'checkout'];
+      if (simple.includes(view)) dispatch({ type: 'SET_VIEW', payload: view });
+    } catch {}
+  }, [state.loading]);
 
   // Scroll reveal — watches for .reveal / .reveal-left / .reveal-right elements
   useEffect(() => {

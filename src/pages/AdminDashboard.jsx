@@ -164,6 +164,32 @@ export default function AdminDashboard() {
         ))}
       </div>
 
+      {/* Low Stock Alert */}
+      {(() => {
+        const lowStockItems = state.products.filter((p) => p.stock > 0 && p.stock <= 5);
+        const outOfStockItems = state.products.filter((p) => p.stock === 0);
+        if (lowStockItems.length === 0 && outOfStockItems.length === 0) return null;
+        return (
+          <div style={{ background: '#FFF8E6', border: '1px solid #F0D060', borderRadius: 10, padding: '14px 18px', marginBottom: 20 }}>
+            <div style={{ fontWeight: 700, fontSize: 14, color: '#7A5800', marginBottom: 8 }}>⚠️ Stock Alerts</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {outOfStockItems.map((p) => (
+                <span key={p.id} style={{ fontSize: 12, background: '#FFE5E5', color: '#C0392B', border: '1px solid #FFBBBB', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontWeight: 600 }}
+                  onClick={() => { startEdit(p); dispatch({ type: 'SET_ADMIN_TAB', payload: 'products' }); }}>
+                  🔴 {p.name} — Out of Stock
+                </span>
+              ))}
+              {lowStockItems.map((p) => (
+                <span key={p.id} style={{ fontSize: 12, background: '#FFF3CD', color: '#856404', border: '1px solid #FFE08A', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontWeight: 600 }}
+                  onClick={() => { startEdit(p); dispatch({ type: 'SET_ADMIN_TAB', payload: 'products' }); }}>
+                  🟡 {p.name} — Only {p.stock} left
+                </span>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Tabs */}
       <div className="admin-tabs" role="tablist" style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
         {[['orders', 'Orders'], ['history', 'Order History'], ['customers', 'Customers'], ['products', 'Products'], ['delivery', 'Delivery Pricing']].map(([v, l]) => (
@@ -452,7 +478,29 @@ export default function AdminDashboard() {
           </div>
 
           {/* Product list */}
-          <h3 style={{ fontFamily: 'Playfair Display', fontSize: 16, marginBottom: 12 }}>All Products ({state.products.length})</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+            <h3 style={{ fontFamily: 'Playfair Display', fontSize: 16, margin: 0 }}>All Products ({state.products.length})</h3>
+            <button
+              className="btn-outline"
+              style={{ fontSize: 12, padding: '7px 16px', display: 'flex', alignItems: 'center', gap: 5 }}
+              onClick={() => {
+                const rows = [
+                  ['#', 'Name', 'Category', 'Price (₦)', 'Original Price (₦)', 'Stock', 'Length', 'Texture', 'Color', 'Best Seller', 'Rating'],
+                  ...state.products.map((p, i) => [
+                    i + 1, p.name, p.category, p.price, p.originalPrice || '', p.stock,
+                    p.length, p.texture || '', p.color, p.bestSeller ? 'Yes' : 'No', p.rating,
+                  ]),
+                ];
+                const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+                a.download = `perrys-products-${new Date().toISOString().slice(0, 10)}.csv`;
+                a.click();
+              }}
+            >
+              ⬇ Export Products CSV
+            </button>
+          </div>
           {state.products.map((product, index) => (
             <div key={product.id} className="card" style={{ padding: '14px 20px', marginBottom: 10 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>

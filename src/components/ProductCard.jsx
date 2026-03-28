@@ -3,9 +3,11 @@ import { AppContext } from '../context.jsx';
 import HairVisual from './HairVisual.jsx';
 import { fmt } from '../data.js';
 
+
 export default function ProductCard({ product, compact = false }) {
-  const { dispatch } = useContext(AppContext);
+  const { state, dispatch } = useContext(AppContext);
   const [clicking, setClicking] = useState(false);
+  const isWishlisted = state.wishlist.some((p) => p.id === product.id);
 
   const handleClick = () => {
     setClicking(true);
@@ -41,6 +43,29 @@ export default function ProductCard({ product, compact = false }) {
         )}
         {product.originalPrice && product.inStock && product.stock > 5 && (
           <span className="badge" style={{ background: '#E8F5EE', color: '#2D7A51', position: 'absolute', top: 10, right: 10, fontSize: 10 }}>Sale</span>
+        )}
+        {/* Wishlist heart */}
+        {!compact && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              dispatch({ type: 'TOGGLE_WISHLIST', payload: product });
+            }}
+            aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+            style={{
+              position: 'absolute', bottom: 8, right: 8,
+              background: isWishlisted ? 'var(--blush)' : 'rgba(255,255,255,0.85)',
+              border: 'none', borderRadius: '50%', width: 30, height: 30,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', fontSize: 14,
+              boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
+              transition: 'transform 0.2s, background 0.2s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.2)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+          >
+            {isWishlisted ? '❤️' : '🤍'}
+          </button>
         )}
       </div>
 

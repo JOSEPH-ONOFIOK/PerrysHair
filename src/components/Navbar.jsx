@@ -63,6 +63,20 @@ export default function Navbar() {
               onClick={() => dispatch({ type: 'SET_AUTH_MODE', payload: 'login' })}>Sign In</button>
           )}
 
+          {/* Wishlist button */}
+          <button
+            onClick={() => navigate('wishlist')}
+            aria-label={`Wishlist, ${state.wishlist.length} item${state.wishlist.length !== 1 ? 's' : ''}`}
+            style={{ position: 'relative', background: 'none', border: '1.5px solid var(--border)', borderRadius: 8, padding: '8px 12px', cursor: 'pointer', fontSize: 16 }}
+          >
+            🤍
+            {state.wishlist.length > 0 && (
+              <span style={{ position: 'absolute', top: -6, right: -6, background: 'var(--blush-dark)', color: 'white', borderRadius: '50%', width: 16, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700 }}>
+                {state.wishlist.length}
+              </span>
+            )}
+          </button>
+
           {/* Cart button */}
           <button
             onClick={() => navigate('cart')}
@@ -103,6 +117,9 @@ export default function Navbar() {
           )}
           <button className={`nav-link${state.view === 'home' ? ' active' : ''}`} style={{ textAlign: 'left', padding: '13px 16px', fontSize: 15, borderRadius: 8, width: '100%' }} onClick={() => navigate('home')}>Home</button>
           <button className={`nav-link${state.view === 'products' ? ' active' : ''}`} style={{ textAlign: 'left', padding: '13px 16px', fontSize: 15, borderRadius: 8, width: '100%' }} onClick={() => navigate('products')}>Shop</button>
+          <button className={`nav-link${state.view === 'wishlist' ? ' active' : ''}`} style={{ textAlign: 'left', padding: '13px 16px', fontSize: 15, borderRadius: 8, width: '100%' }} onClick={() => navigate('wishlist')}>
+            🤍 Wishlist {state.wishlist.length > 0 ? `(${state.wishlist.length})` : ''}
+          </button>
           {state.user && (
             <button className={`nav-link${state.view === 'history' ? ' active' : ''}`} style={{ textAlign: 'left', padding: '13px 16px', fontSize: 15, borderRadius: 8, width: '100%' }} onClick={() => navigate('history')}>My Orders</button>
           )}

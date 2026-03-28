@@ -1,7 +1,9 @@
 import { createContext, useReducer, useEffect, useRef } from 'react';
-import { supabase, fetchProducts, fetchOrders, fetchProfile, fetchDeliverySettings, fetchBankDetails, fetchCart, syncCart, DEFAULT_DELIVERY, DEFAULT_BANK } from './supabase.js';
+import { supabase, fetchProducts, fetchOrders, fetchProfile, fetchDeliverySettings, fetchBankDetails, fetchCart, syncCart, fetchWishlist, addToWishlist, removeFromWishlist, DEFAULT_DELIVERY, DEFAULT_BANK } from './supabase.js';
 
 export const AppContext = createContext(null);
+
+const savedWishlist = (() => { try { return JSON.parse(localStorage.getItem('perrys_wishlist')) || []; } catch { return []; } })();
 
 const initialState = {
   user: null,
@@ -19,6 +21,8 @@ const initialState = {
   adminTab: 'orders',
   loading: true,
   needsProductRefresh: false,
+  wishlist: savedWishlist,
+  recentlyViewed: [],
 };
 
 function reducer(state, action) {
@@ -115,6 +119,26 @@ function reducer(state, action) {
             : p
         ),
       };
+    case 'TOGGLE_WISHLIST': {
+      const inList = state.wishlist.some((p) => p.id === action.payload.id);
+      const wishlist = inList
+        ? state.wishlist.filter((p) => p.id !== action.payload.id)
+        : [action.payload, ...state.wishlist];
+      try { localStorage.setItem('perrys_wishlist', JSON.stringify(wishlist)); } catch {}
+      return { ...state, wishlist, _wishlistToggle: { product: action.payload, removed: inList } };
+    }
+    case 'MERGE_WISHLIST': {
+      // Merge remote wishlist IDs with local products list (products may not be loaded yet — handled by effect)
+      return { ...state, _pendingWishlistIds: action.payload.remoteIds };
+    }
+    case 'RESOLVE_WISHLIST': {
+      try { localStorage.setItem('perrys_wishlist', JSON.stringify(action.payload)); } catch {}
+      return { ...state, wishlist: action.payload, _pendingWishlistIds: null };
+    }
+    case 'ADD_RECENTLY_VIEWED': {
+      const prev = state.recentlyViewed.filter((p) => p.id !== action.payload.id);
+      return { ...state, recentlyViewed: [action.payload, ...prev].slice(0, 12) };
+    }
     case 'DELETE_ORDER':
       return { ...state, orders: state.orders.filter((o) => o.id !== action.payload) };
     case 'UPDATE_ORDER_STATUS':
@@ -214,12 +238,16 @@ export function AppProvider({ children }) {
           isAdmin: profile.is_admin,
         },
       });
-      const [orders, savedCart] = await Promise.all([
+      const [orders, savedCart, remoteWishlistIds] = await Promise.all([
         fetchOrders(authUser.id, profile.is_admin),
         fetchCart(authUser.id),
+        fetchWishlist(authUser.id).catch(() => []),
       ]);
       dispatch({ type: 'SET_ORDERS', payload: orders });
       if (savedCart.length) dispatch({ type: 'SET_CART', payload: savedCart });
+      if (remoteWishlistIds.length) {
+        dispatch({ type: 'MERGE_WISHLIST', payload: { remoteIds: remoteWishlistIds, userId: authUser.id } });
+      }
     } catch {
       dispatch({
         type: 'SET_USER',
@@ -232,6 +260,30 @@ export function AppProvider({ children }) {
       });
     }
   }
+
+  // Resolve remote wishlist IDs → full product objects once products are loaded
+  useEffect(() => {
+    if (!state._pendingWishlistIds || state.loading || !state.products.length) return;
+    const resolved = state._pendingWishlistIds
+      .map((id) => state.products.find((p) => p.id === id))
+      .filter(Boolean);
+    // Merge with any locally saved items the user added while logged out
+    const local = state.wishlist.filter((p) => !resolved.some((r) => r.id === p.id));
+    dispatch({ type: 'RESOLVE_WISHLIST', payload: [...resolved, ...local] });
+  }, [state._pendingWishlistIds, state.loading, state.products]);
+
+  // Sync individual wishlist toggle to Supabase (logged-in users only)
+  const wishlistSyncRef = useRef(false);
+  useEffect(() => {
+    if (!wishlistSyncRef.current) { wishlistSyncRef.current = true; return; }
+    if (!state.user?.id || !state._wishlistToggle) return;
+    const { product, removed } = state._wishlistToggle;
+    if (removed) {
+      removeFromWishlist(state.user.id, product.id).catch(() => {});
+    } else {
+      addToWishlist(state.user.id, product.id).catch(() => {});
+    }
+  }, [state._wishlistToggle]);
 
   // Sync cart to DB whenever it changes (logged-in users only)
   // Debounced to prevent race conditions on rapid cart updates

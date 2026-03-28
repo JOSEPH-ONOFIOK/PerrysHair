@@ -2,6 +2,8 @@ import { useContext, useState, useEffect } from 'react';
 import { AppContext } from '../context.jsx';
 import HairVisual from '../components/HairVisual.jsx';
 import ProductCard from '../components/ProductCard.jsx';
+import ShareButton from '../components/ShareButton.jsx';
+import SizeGuideModal from '../components/SizeGuideModal.jsx';
 import { fmt } from '../data.js';
 import { fetchReviews, upsertReview, subscribeToStockNotification } from '../supabase.js';
 
@@ -48,6 +50,7 @@ export default function ProductDetail() {
   const [lightbox, setLightbox] = useState(false);
   const [notified, setNotified] = useState(false);
   const [notifying, setNotifying] = useState(false);
+  const [sizeGuide, setSizeGuide] = useState(false);
 
   const related = p
     ? state.products.filter((x) => x.category === p.category && x.id !== p.id).slice(0, 3)
@@ -55,6 +58,7 @@ export default function ProductDetail() {
 
   useEffect(() => {
     if (!p) return;
+    dispatch({ type: 'ADD_RECENTLY_VIEWED', payload: p });
     setReviews([]);
     setMyRating(0);
     setMyReview('');
@@ -167,6 +171,16 @@ export default function ProductDetail() {
             </div>
           )}
 
+          <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+            <ShareButton product={product} />
+            <button
+              onClick={() => setSizeGuide(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--warm-white)', color: 'var(--text-mid)', border: '1.5px solid var(--border)', borderRadius: 8, padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+            >
+              📏 Size Guide
+            </button>
+          </div>
+
           <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
             <button className="btn-primary" style={{ flex: 1, minWidth: 140, justifyContent: 'center', padding: '15px', fontSize: 15, background: product.inStock ? undefined : 'var(--text-light)' }}
               onClick={() => {
@@ -207,7 +221,7 @@ export default function ProductDetail() {
           <div style={{ background: 'var(--warm-white)', borderRadius: 10, padding: 20, border: '1px solid var(--border)' }}>
             {[
               ['🚀', 'Fast Delivery', 'Within a week or 6 working days'],
-              ['🔄', 'Easy Returns', '7-day hassle-free returns'],
+              ['🔄', 'Easy Returns', '48Hrs hassle-free returns'],
               ['✅', 'Authentic Hair', '100% human hair guarantee'],
               ['📦', 'Secure Packaging', 'Every order professionally packed'],
             ].map(([icon, title, desc]) => (
@@ -340,6 +354,21 @@ export default function ProductDetail() {
           </div>
         </div>
       )}
+
+      {/* Recently Viewed */}
+      {state.recentlyViewed.filter((x) => x.id !== product.id).length > 0 && (
+        <div style={{ marginTop: 60 }}>
+          <h2 style={{ fontFamily: 'Playfair Display', fontSize: 24, marginBottom: 24 }}>Recently Viewed</h2>
+          <div className="products-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 20 }}>
+            {state.recentlyViewed.filter((x) => x.id !== product.id).slice(0, 4).map((x) => (
+              <ProductCard key={x.id} product={state.products.find((p) => p.id === x.id) || x} compact />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Size Guide Modal */}
+      {sizeGuide && <SizeGuideModal onClose={() => setSizeGuide(false)} />}
     </div>
   );
 }

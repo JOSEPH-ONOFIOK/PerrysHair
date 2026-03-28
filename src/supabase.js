@@ -380,6 +380,33 @@ export async function clearStockNotifications(productId) {
 
 // ── Product Image Upload ──────────────────────────────────────────────────────
 
+// ── Wishlist ───────────────────────────────────────────────────────────────────
+
+export async function fetchWishlist(userId) {
+  const { data, error } = await supabase
+    .from('wishlists')
+    .select('product_id')
+    .eq('user_id', userId);
+  if (error) throw error;
+  return (data || []).map((r) => r.product_id);
+}
+
+export async function addToWishlist(userId, productId) {
+  const { error } = await supabase
+    .from('wishlists')
+    .upsert({ user_id: userId, product_id: productId }, { onConflict: 'user_id,product_id' });
+  if (error) throw error;
+}
+
+export async function removeFromWishlist(userId, productId) {
+  const { error } = await supabase
+    .from('wishlists')
+    .delete()
+    .eq('user_id', userId)
+    .eq('product_id', productId);
+  if (error) throw error;
+}
+
 export async function uploadProductImage(file) {
   const ext = file.name.split('.').pop();
   const path = `products/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;

@@ -2,6 +2,7 @@ import { useContext, useState, useEffect } from 'react';
 import { AppContext } from '../context.jsx';
 import ProductCard from '../components/ProductCard.jsx';
 import HairVisual from '../components/HairVisual.jsx';
+import SocialProofSection from '../components/SocialProofSection.jsx';
 import { fmt } from '../data.js';
 
 const BobIcon = () => (
@@ -183,6 +184,9 @@ export default function HomePage() {
           )}
         </div>
       </section>
+
+      {/* Social Proof */}
+      <SocialProofSection />
 
       {/* CTA */}
       <section style={{ background: 'linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%)', padding: '60px 24px', textAlign: 'center' }}>

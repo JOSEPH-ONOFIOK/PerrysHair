@@ -3,6 +3,7 @@ import { AppContext } from '../context.jsx';
 import HairVisual from '../components/HairVisual.jsx';
 import { supabase, insertOrder, decrementStock } from '../supabase.js';
 import { sendReceiptEmail } from '../email.js';
+import { applyCoupon } from '../coupons.js';
 
 const COUNTRY_CURRENCY = {
   Nigeria:          { code: 'NGN', symbol: '₦' },
@@ -37,6 +38,9 @@ export default function CheckoutPage() {
   const [payMethod, setPayMethod] = useState('paystack');
   const [processing, setProcessing] = useState(false);
   const [rates, setRates] = useState({});
+  const [couponInput, setCouponInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponError, setCouponError] = useState('');
   const payBtnRef = useRef(null);
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -85,7 +89,16 @@ export default function CheckoutPage() {
   const subtotal = state.cart.reduce((s, i) => s + i.price * i.qty, 0);
   const service = Math.round(subtotal * 0.025);
   const deliveryFee = deliveryOptions.find((o) => o.id === delivery)?.fee || 0;
-  const total = subtotal + service + deliveryFee;
+  const couponDiscount = appliedCoupon ? appliedCoupon.discount : 0;
+  const total = Math.max(0, subtotal + service + deliveryFee - couponDiscount);
+
+  const handleApplyCoupon = () => {
+    setCouponError('');
+    const result = applyCoupon(couponInput, subtotal);
+    if (!result) { setCouponError('Invalid coupon code'); return; }
+    setAppliedCoupon(result);
+    setCouponInput('');
+  };
 
   const buildOrder = () => {
     const rand = () => crypto.getRandomValues(new Uint32Array(1))[0].toString(36).toUpperCase();
@@ -438,11 +451,46 @@ export default function CheckoutPage() {
               );
             })}
             <div style={{ height: 1, background: 'var(--border)', margin: '12px 0' }} />
+            {/* Coupon code */}
+            <div style={{ marginBottom: 12 }}>
+              {appliedCoupon ? (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#e8f5ee', border: '1px solid #2D7A51', borderRadius: 8, padding: '8px 12px' }}>
+                  <div>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#2D7A51' }}>🎟 {appliedCoupon.code}</span>
+                    <span style={{ fontSize: 11, color: '#2D7A51', marginLeft: 6 }}>{appliedCoupon.label} applied!</span>
+                  </div>
+                  <button onClick={() => setAppliedCoupon(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#2D7A51', fontSize: 16, lineHeight: 1 }}>×</button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <input
+                    className="input-field"
+                    placeholder="Coupon code"
+                    value={couponInput}
+                    onChange={(e) => { setCouponInput(e.target.value.toUpperCase()); setCouponError(''); }}
+                    onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
+                    style={{ flex: 1, fontSize: 13, padding: '9px 12px' }}
+                  />
+                  <button
+                    onClick={handleApplyCoupon}
+                    style={{ background: 'var(--gold)', color: 'white', border: 'none', borderRadius: 8, padding: '0 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                  >Apply</button>
+                </div>
+              )}
+              {couponError && <p style={{ fontSize: 11, color: '#c0392b', marginTop: 4, marginBottom: 0 }}>{couponError}</p>}
+            </div>
+
             {[['Subtotal', fmtLocal(subtotal)], ['VAT (2.5%)', fmtLocal(service)], ['Delivery', fmtLocal(deliveryFee)]].map(([l, v]) => (
               <div key={l} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 8, color: 'var(--text-mid)' }}>
                 <span>{l}</span><span>{v}</span>
               </div>
             ))}
+            {appliedCoupon && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 8, color: '#2D7A51', fontWeight: 600 }}>
+                <span>Discount ({appliedCoupon.label})</span>
+                <span>−{fmtLocal(couponDiscount)}</span>
+              </div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: 16, marginTop: 8, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
               <span>Total</span><span style={{ color: 'var(--gold)' }}>{fmtLocal(total)}</span>
             </div>

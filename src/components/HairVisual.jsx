@@ -1,4 +1,3 @@
-import React from 'react';
 import { HAIR_GRADIENTS } from '../data.js';
 
 const SHAPES = {
@@ -96,6 +95,8 @@ export default function HairVisual({ image, style = {}, size = 200 }) {
         alt="product"
         width={size}
         height={size}
+        loading="lazy"
+        decoding="async"
         style={{ objectFit: 'cover', borderRadius: 8, display: 'block', ...style }}
       />
     );

@@ -7,6 +7,7 @@ import Navbar from './components/Navbar.jsx';
 import Toast from './components/Toast.jsx';
 import AuthModal from './components/AuthModal.jsx';
 import ResetPasswordModal from './components/ResetPasswordModal.jsx';
+import WhatsAppBubble from './components/WhatsAppBubble.jsx';
 
 // Pages
 import HomePage from './pages/HomePage.jsx';
@@ -17,6 +18,7 @@ import CheckoutPage from './pages/CheckoutPage.jsx';
 import OrderTracking from './pages/OrderTracking.jsx';
 import HistoryPage from './pages/HistoryPage.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
+import WishlistPage from './pages/WishlistPage.jsx';
 
 const PAGE_TITLES = {
   home:            "Perry's Hairline – Hair Store",
@@ -28,6 +30,7 @@ const PAGE_TITLES = {
   history:         "My Orders – Perry's Hairline",
   admin:           "Admin Dashboard – Perry's Hairline",
   auth:            "Sign In – Perry's Hairline",
+  wishlist:        "My Wishlist – Perry's Hairline",
 };
 
 function AppInner() {
@@ -176,7 +179,7 @@ function AppInner() {
         if (order) { dispatch({ type: 'SELECT_ORDER', payload: order }); return; }
       }
       // For all other views just restore directly
-      const simple = ['products', 'cart', 'history', 'admin', 'checkout'];
+      const simple = ['products', 'cart', 'history', 'admin', 'checkout', 'wishlist'];
       if (simple.includes(view)) dispatch({ type: 'SET_VIEW', payload: view });
     } catch {}
   }, [state.loading]);
@@ -212,6 +215,7 @@ function AppInner() {
       case 'order-tracking':return <OrderTracking />;
       case 'history':       return <HistoryPage />;
       case 'admin':         return <AdminDashboard />;
+      case 'wishlist':      return <WishlistPage />;
       default:              return <HomePage />;
     }
   };
@@ -285,6 +289,7 @@ function AppInner() {
       {state.view === 'auth' && <AuthModal />}
       {state.view === 'reset-password' && <ResetPasswordModal />}
       <Toast />
+      <WhatsAppBubble />
     </div>
   );
 }

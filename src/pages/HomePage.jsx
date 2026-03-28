@@ -2,7 +2,7 @@ import { useContext } from 'react';
 import { AppContext } from '../context.jsx';
 import ProductCard from '../components/ProductCard.jsx';
 import HairVisual from '../components/HairVisual.jsx';
-import { HAIR_PRODUCTS, fmt } from '../data.js';
+import { fmt } from '../data.js';
 
 const BobIcon = () => (
   <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 64, height: 64 }}>
@@ -58,9 +58,9 @@ const sections = [
 ];
 
 export default function HomePage() {
-  const { dispatch } = useContext(AppContext);
-  const recent = HAIR_PRODUCTS.slice(0, 4);
-  const bestSellers = HAIR_PRODUCTS.filter((p) => p.bestSeller).slice(0, 4);
+  const { state, dispatch } = useContext(AppContext);
+  const products = state.products;
+  const bestSellers = products.filter((p) => p.bestSeller);
 
   return (
     <div>
@@ -92,7 +92,7 @@ export default function HomePage() {
           <div className="hide-mobile hero-products" style={{ display: 'flex', justifyContent: 'center', position: 'relative' }}>
             <div style={{ position: 'absolute', width: 320, height: 320, borderRadius: '50%', background: 'rgba(201,151,58,0.08)', top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }} />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              {HAIR_PRODUCTS.slice(0, 4).map((p) => (
+              {products.slice(0, 4).map((p) => (
                 <div key={p.id} className="card" style={{ background: 'linear-gradient(135deg, rgba(255,249,240,0.08), rgba(255,249,240,0.03))', border: '1px solid rgba(201,151,58,0.2)', cursor: 'pointer' }}
                   onClick={() => dispatch({ type: 'SELECT_PRODUCT', payload: p })}>
                   <HairVisual image={p.image} size={100} style={{ display: 'block', margin: '16px auto 8px' }} />
@@ -126,35 +126,40 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* New In */}
-      <section style={{ padding: '40px 24px 60px', background: 'var(--warm-white)' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div className="reveal" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32, flexWrap: 'wrap', gap: 16 }}>
-            <div>
-              <h2 className="section-title">New In Stock</h2>
-              <p className="section-subtitle">Just arrived — get yours before they sell out</p>
-            </div>
-            <button className="btn-outline" onClick={() => dispatch({ type: 'SET_VIEW', payload: 'products' })}>View All</button>
-          </div>
-          <div className="products-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 20 }}>
-            {recent.map((p) => <ProductCard key={p.id} product={p} />)}
-          </div>
-        </div>
-      </section>
-
       {/* Best Sellers */}
+      {bestSellers.length > 0 && (
+        <section style={{ padding: '40px 24px 60px', background: 'var(--warm-white)' }}>
+          <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+            <div className="reveal" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32, flexWrap: 'wrap', gap: 16 }}>
+              <div>
+                <h2 className="section-title">Best Sellers</h2>
+                <p className="section-subtitle">Customer favourites, loved across Lagos & beyond</p>
+              </div>
+              <button className="btn-outline" onClick={() => dispatch({ type: 'SET_VIEW', payload: 'products' })}>Shop All</button>
+            </div>
+            <div className="products-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 20 }}>
+              {bestSellers.map((p) => <ProductCard key={p.id} product={p} />)}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* All Products */}
       <section style={{ padding: '60px 24px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div className="reveal" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32, flexWrap: 'wrap', gap: 16 }}>
             <div>
-              <h2 className="section-title">Best Sellers</h2>
-              <p className="section-subtitle">Customer favourites, loved across Lagos & beyond</p>
+              <h2 className="section-title">Our Collection</h2>
+              <p className="section-subtitle">Every piece, handpicked for you</p>
             </div>
-            <button className="btn-outline" onClick={() => dispatch({ type: 'SET_VIEW', payload: 'products' })}>Shop All</button>
+            <button className="btn-outline" onClick={() => dispatch({ type: 'SET_VIEW', payload: 'products' })}>View Shop</button>
           </div>
           <div className="products-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 20 }}>
-            {bestSellers.map((p) => <ProductCard key={p.id} product={p} />)}
+            {products.map((p) => <ProductCard key={p.id} product={p} />)}
           </div>
+          {products.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-light)' }}>Loading collection...</div>
+          )}
         </div>
       </section>
 

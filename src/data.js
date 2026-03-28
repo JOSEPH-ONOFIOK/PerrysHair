@@ -13,7 +13,7 @@ export const HAIR_PRODUCTS = [
 
 export const CATEGORIES = ["All", "Bobs", "Curly", "Wavy", "Bouncy", "Bone Straight", "Straight", "Body Wave", "Loose Wave", "Deep Wave", "Kinky Curly", "Water Wave", "Yaki"];
 
-export const TEXTURES = ["Double Drawn Virgin", "Super Double Drawn", "Single Donor (Raw)", "Indonesia Hair"];
+export const TEXTURES = ["Double Drawn Virgin", "Super Double Drawn", "Single Donor (Raw)", "Indonesia Hair", "Bone Straight"];
 
 export const ORDER_STATUSES = [
   "Order Placed",

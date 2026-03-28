@@ -1,11 +1,12 @@
 import { useContext, useState } from 'react';
 import { AppContext } from '../context.jsx';
 import HairVisual from './HairVisual.jsx';
-import { fmt } from '../data.js';
+import { useCurrency } from '../hooks/useCurrency.js';
 
 
 export default function ProductCard({ product, compact = false }) {
   const { state, dispatch } = useContext(AppContext);
+  const { fmtPrice } = useCurrency();
   const [clicking, setClicking] = useState(false);
   const isWishlisted = state.wishlist.some((p) => p.id === product.id);
 
@@ -85,9 +86,9 @@ export default function ProductCard({ product, compact = false }) {
         <div style={{ marginTop: 'auto' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 4, marginBottom: compact ? 0 : 10 }}>
             <div>
-              <span style={{ fontWeight: 700, fontSize: compact ? 14 : 16, color: 'var(--gold)' }}>{fmt(product.price)}</span>
+              <span style={{ fontWeight: 700, fontSize: compact ? 14 : 16, color: 'var(--gold)' }}>{fmtPrice(product.price)}</span>
               {product.originalPrice && (
-                <span style={{ fontSize: 11, color: 'var(--text-light)', textDecoration: 'line-through', marginLeft: 5 }}>{fmt(product.originalPrice)}</span>
+                <span style={{ fontSize: 11, color: 'var(--text-light)', textDecoration: 'line-through', marginLeft: 5 }}>{fmtPrice(product.originalPrice)}</span>
               )}
             </div>
             <span style={{ fontSize: 11, color: 'var(--text-light)' }}>★ {product.rating} ({product.reviews})</span>

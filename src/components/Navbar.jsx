@@ -1,9 +1,11 @@
 import { useContext, useState } from 'react';
 import { AppContext } from '../context.jsx';
 import { signOut } from '../supabase.js';
+import { useCurrency } from '../hooks/useCurrency.js';
 
 export default function Navbar() {
   const { state, dispatch } = useContext(AppContext);
+  const { currency } = useCurrency();
   const [menuOpen, setMenuOpen] = useState(false);
   const cartCount = state.cart.reduce((s, i) => s + i.qty, 0);
 
@@ -62,6 +64,16 @@ export default function Navbar() {
             <button className="btn-outline hide-mobile" style={{ padding: '8px 18px', fontSize: 13 }}
               onClick={() => dispatch({ type: 'SET_AUTH_MODE', payload: 'login' })}>Sign In</button>
           )}
+
+          {/* Currency switcher */}
+          <button
+            onClick={() => dispatch({ type: 'SET_REGION_MODAL', payload: true })}
+            title="Change currency"
+            style={{ background: 'none', border: '1.5px solid var(--border)', borderRadius: 8, padding: '7px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: 'var(--text-mid)', display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}
+          >
+            <span>{currency.flag}</span>
+            <span className="hide-mobile">{currency.code}</span>
+          </button>
 
           {/* Wishlist button */}
           <button

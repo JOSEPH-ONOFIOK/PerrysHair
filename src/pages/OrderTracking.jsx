@@ -1,10 +1,12 @@
 import { useContext } from 'react';
 import { AppContext } from '../context.jsx';
 import HairVisual from '../components/HairVisual.jsx';
-import { ORDER_STATUSES, fmt } from '../data.js';
+import { ORDER_STATUSES } from '../data.js';
+import { useCurrency } from '../hooks/useCurrency.js';
 
 export default function OrderTracking() {
   const { state, dispatch } = useContext(AppContext);
+  const { fmtPrice } = useCurrency();
   const order = state.selectedOrder;
   if (!order) return null;
 
@@ -65,12 +67,12 @@ export default function OrderTracking() {
               <div style={{ fontWeight: 600 }}>{item.name}</div>
               <div style={{ fontSize: 12, color: 'var(--text-light)' }}>{item.category} • {item.length}</div>
             </div>
-            <span style={{ fontWeight: 700, color: 'var(--gold)' }}>{fmt(item.price * (item.qty || 1))}</span>
+            <span style={{ fontWeight: 700, color: 'var(--gold)' }}>{fmtPrice(item.price * (item.qty || 1))}</span>
           </div>
         ))}
         <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: 16, paddingTop: 4 }}>
           <span>Total Paid</span>
-          <span style={{ color: 'var(--gold)' }}>{fmt(order.total)}</span>
+          <span style={{ color: 'var(--gold)' }}>{fmtPrice(order.total)}</span>
         </div>
       </div>
     </div>

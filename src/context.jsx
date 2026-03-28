@@ -4,6 +4,8 @@ import { supabase, fetchProducts, fetchOrders, fetchProfile, fetchDeliverySettin
 export const AppContext = createContext(null);
 
 const savedWishlist = (() => { try { return JSON.parse(localStorage.getItem('perrys_wishlist')) || []; } catch { return []; } })();
+const savedCurrency = (() => { try { return JSON.parse(localStorage.getItem('perrys_currency')); } catch { return null; } })();
+const DEFAULT_CURRENCY = { flag: '🇳🇬', country: 'Nigeria', code: 'NGN', symbol: '₦', label: 'Nigerian Naira' };
 
 const initialState = {
   user: null,
@@ -23,10 +25,19 @@ const initialState = {
   needsProductRefresh: false,
   wishlist: savedWishlist,
   recentlyViewed: [],
+  currency: savedCurrency || DEFAULT_CURRENCY,
+  exchangeRates: {},
+  showRegionModal: !savedCurrency,
 };
 
 function reducer(state, action) {
   switch (action.type) {
+    case 'SET_CURRENCY':
+      return { ...state, currency: action.payload, showRegionModal: false };
+    case 'SET_RATES':
+      return { ...state, exchangeRates: action.payload };
+    case 'SET_REGION_MODAL':
+      return { ...state, showRegionModal: action.payload };
     case 'SET_VIEW':
       return { ...state, view: action.payload };
     case 'SET_SHOP_FILTER':
@@ -155,6 +166,14 @@ function reducer(state, action) {
 
 export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState);
+
+  // Fetch live exchange rates (base NGN)
+  useEffect(() => {
+    fetch('https://open.er-api.com/v6/latest/NGN')
+      .then((r) => r.json())
+      .then((data) => { if (data.rates) dispatch({ type: 'SET_RATES', payload: data.rates }); })
+      .catch(() => {});
+  }, []);
 
   // Load products and delivery settings on mount
   useEffect(() => {

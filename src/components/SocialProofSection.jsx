@@ -3,8 +3,7 @@ const TESTIMONIALS = [
   { name: 'Funke A.', location: 'Abuja', rating: 5, text: "Perry's is my go-to for all my hair needs. The quality is unmatched and the customer service is 10/10. Already on my 3rd order!", avatar: '👩🏾‍🦱' },
   { name: 'Chioma N.', location: 'Port Harcourt', rating: 5, text: "The Bone Straight hair looks exactly like the photos. Zero shedding after 3 weeks of wearing it. Highly recommend!", avatar: '👩🏿' },
   { name: 'Blessing E.', location: 'Enugu', rating: 5, text: "Fast delivery to Enugu, great packaging, and the hair is absolutely gorgeous. You won't regret shopping here!", avatar: '👩🏾‍🦲' },
-  { name: 'Temi F.', location: 'Ibadan', rating: 5, text: "Single Donor raw hair — absolutely premium! It blends so naturally. I've tried many vendors but Perry's stands out.", avatar: '👩🏽' },
-  { name: 'Ngozi K.', location: 'Lagos', rating: 5, text: "The Indonesia hair is stunning. Soft, tangle-free, and lasts so long. Worth every penny — this is real quality!", avatar: '👩🏿‍🦱' },
+ 
 ];
 
 export default function SocialProofSection() {

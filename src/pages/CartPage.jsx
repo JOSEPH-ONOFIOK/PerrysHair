@@ -1,10 +1,11 @@
 import { useContext } from 'react';
 import { AppContext } from '../context.jsx';
 import HairVisual from '../components/HairVisual.jsx';
-import { fmt } from '../data.js';
+import { useCurrency } from '../hooks/useCurrency.js';
 
 export default function CartPage() {
   const { state, dispatch } = useContext(AppContext);
+  const { fmtPrice } = useCurrency();
   const { cart } = state;
   const outOfStockItems = cart.filter((item) => {
     const live = state.products.find((p) => p.id === item.id);
@@ -57,7 +58,7 @@ export default function CartPage() {
                     <button style={{ background: 'none', border: 'none', fontSize: 16, cursor: 'pointer', color: 'var(--text-mid)', width: 24 }}
                       onClick={() => dispatch({ type: 'UPDATE_QTY', payload: { id: item.id, qty: item.qty + 1 } })}>+</button>
                   </div>
-                  <span style={{ fontWeight: 700, color: 'var(--gold)', fontSize: 16 }}>{fmt(item.price * item.qty)}</span>
+                  <span style={{ fontWeight: 700, color: 'var(--gold)', fontSize: 16 }}>{fmtPrice(item.price * item.qty)}</span>
                 </div>
               </div>
             </div>
@@ -71,11 +72,11 @@ export default function CartPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
                 <span style={{ color: 'var(--text-light)' }}>Subtotal ({cart.reduce((s, i) => s + i.qty, 0)} items)</span>
-                <span>{fmt(subtotal)}</span>
+                <span>{fmtPrice(subtotal)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
                 <span style={{ color: 'var(--text-light)' }}>VAT (2.5%)</span>
-                <span style={{ color: 'var(--gold-dark)', fontSize: 12 }}>{fmt(service)}</span>
+                <span style={{ color: 'var(--gold-dark)', fontSize: 12 }}>{fmtPrice(service)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
                 <span style={{ color: 'var(--text-light)' }}>Delivery</span>
@@ -84,7 +85,7 @@ export default function CartPage() {
               <div style={{ height: 1, background: 'var(--border)' }} />
               <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: 18 }}>
                 <span>Total</span>
-                <span style={{ color: 'var(--gold)' }}>{fmt(total)}</span>
+                <span style={{ color: 'var(--gold)' }}>{fmtPrice(total)}</span>
               </div>
             </div>
             {hasOutOfStock && (

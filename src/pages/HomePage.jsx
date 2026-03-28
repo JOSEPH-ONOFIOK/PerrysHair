@@ -3,7 +3,7 @@ import { AppContext } from '../context.jsx';
 import ProductCard from '../components/ProductCard.jsx';
 import HairVisual from '../components/HairVisual.jsx';
 import SocialProofSection from '../components/SocialProofSection.jsx';
-import { fmt } from '../data.js';
+import { useCurrency } from '../hooks/useCurrency.js';
 
 const BobIcon = () => (
   <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 64, height: 64 }}>
@@ -60,6 +60,7 @@ const sections = [
 
 export default function HomePage() {
   const { state, dispatch } = useContext(AppContext);
+  const { fmtPrice } = useCurrency();
   const products = state.products;
   const bestSellers = products.filter((p) => p.bestSeller);
   const topRated = [...products].sort((a, b) => b.rating - a.rating).slice(0, 8);
@@ -119,7 +120,7 @@ export default function HomePage() {
                   <HairVisual image={p.image} size={100} style={{ display: 'block', margin: '16px auto 8px' }} />
                   <div style={{ padding: '0 12px 12px', textAlign: 'center' }}>
                     <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>{p.name}</div>
-                    <div style={{ fontSize: 11, color: 'var(--gold-light)', marginTop: 2 }}>{fmt(p.price)}</div>
+                    <div style={{ fontSize: 11, color: 'var(--gold-light)', marginTop: 2 }}>{fmtPrice(p.price)}</div>
                   </div>
                 </div>
               ))}

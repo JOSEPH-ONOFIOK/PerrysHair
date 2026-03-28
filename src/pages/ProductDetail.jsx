@@ -4,7 +4,7 @@ import HairVisual from '../components/HairVisual.jsx';
 import ProductCard from '../components/ProductCard.jsx';
 import ShareButton from '../components/ShareButton.jsx';
 import SizeGuideModal from '../components/SizeGuideModal.jsx';
-import { fmt } from '../data.js';
+import { useCurrency } from '../hooks/useCurrency.js';
 import { fetchReviews, upsertReview, subscribeToStockNotification } from '../supabase.js';
 
 function Stars({ rating, size = 16, interactive = false, onRate }) {
@@ -40,6 +40,7 @@ function Stars({ rating, size = 16, interactive = false, onRate }) {
 
 export default function ProductDetail() {
   const { state, dispatch } = useContext(AppContext);
+  const { fmtPrice } = useCurrency();
   const p = state.selectedProduct;
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
@@ -153,11 +154,11 @@ export default function ProductDetail() {
             <span style={{ fontSize: 13, color: 'var(--text-light)' }}>{product.rating > 0 ? product.rating.toFixed(1) : 'No ratings yet'} {product.reviews > 0 ? `(${product.reviews} review${product.reviews !== 1 ? 's' : ''})` : ''}</span>
           </div>
           <div style={{ marginBottom: 24 }}>
-            <span style={{ fontFamily: 'Playfair Display', fontSize: 36, fontWeight: 700, color: 'var(--gold)' }}>{fmt(product.price)}</span>
+            <span style={{ fontFamily: 'Playfair Display', fontSize: 36, fontWeight: 700, color: 'var(--gold)' }}>{fmtPrice(product.price)}</span>
             {product.originalPrice && (
               <>
-                <span style={{ fontSize: 16, color: 'var(--text-light)', textDecoration: 'line-through', marginLeft: 10 }}>{fmt(product.originalPrice)}</span>
-                <span className="badge" style={{ background: '#E8F5EE', color: '#2D7A51', marginLeft: 10 }}>Save {fmt(product.originalPrice - product.price)}</span>
+                <span style={{ fontSize: 16, color: 'var(--text-light)', textDecoration: 'line-through', marginLeft: 10 }}>{fmtPrice(product.originalPrice)}</span>
+                <span className="badge" style={{ background: '#E8F5EE', color: '#2D7A51', marginLeft: 10 }}>Save {fmtPrice(product.originalPrice - product.price)}</span>
               </>
             )}
           </div>
@@ -220,7 +221,7 @@ export default function ProductDetail() {
 
           <div style={{ background: 'var(--warm-white)', borderRadius: 10, padding: 20, border: '1px solid var(--border)' }}>
             {[
-              ['🚀', 'Fast Delivery', 'Within a week or 6 working days'],
+              ['🚀', 'Fast Delivery', '2 working days after hair is ready'],
               ['🔄', 'Easy Returns', '48Hrs hassle-free returns'],
               ['✅', 'Authentic Hair', '100% human hair guarantee'],
               ['📦', 'Secure Packaging', 'Every order professionally packed'],

@@ -8,6 +8,7 @@ import Toast from './components/Toast.jsx';
 import AuthModal from './components/AuthModal.jsx';
 import ResetPasswordModal from './components/ResetPasswordModal.jsx';
 import WhatsAppBubble from './components/WhatsAppBubble.jsx';
+import RegionModal from './components/RegionModal.jsx';
 
 // Pages
 import HomePage from './pages/HomePage.jsx';
@@ -290,6 +291,7 @@ function AppInner() {
       {state.view === 'reset-password' && <ResetPasswordModal />}
       <Toast />
       <WhatsAppBubble />
+      {state.showRegionModal && <RegionModal onClose={() => dispatch({ type: 'SET_REGION_MODAL', payload: false })} />}
     </div>
   );
 }

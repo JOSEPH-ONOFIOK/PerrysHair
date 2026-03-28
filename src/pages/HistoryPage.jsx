@@ -1,10 +1,12 @@
 import { useContext } from 'react';
 import { AppContext } from '../context.jsx';
 import HairVisual from '../components/HairVisual.jsx';
-import { ORDER_STATUSES, fmt } from '../data.js';
+import { ORDER_STATUSES } from '../data.js';
+import { useCurrency } from '../hooks/useCurrency.js';
 
 export default function HistoryPage() {
   const { state, dispatch } = useContext(AppContext);
+  const { fmtPrice } = useCurrency();
   const { orders } = state;
 
   if (!state.user)
@@ -49,7 +51,7 @@ export default function HistoryPage() {
                 </div>
               ))}
               <div style={{ flex: 1, textAlign: 'right' }}>
-                <span style={{ fontWeight: 700, fontSize: 16, color: 'var(--gold)' }}>{fmt(order.total)}</span>
+                <span style={{ fontWeight: 700, fontSize: 16, color: 'var(--gold)' }}>{fmtPrice(order.total)}</span>
                 <div style={{ fontSize: 12, color: 'var(--text-light)', marginTop: 2 }}>View Details →</div>
               </div>
             </div>

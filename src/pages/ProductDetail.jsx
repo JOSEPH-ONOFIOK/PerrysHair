@@ -298,25 +298,35 @@ export default function ProductDetail() {
         )}
       </div>
 
-      {/* Image Lightbox */}
+      {/* Full-screen Image Lightbox */}
       {lightbox && (
         <div
           onClick={() => setLightbox(false)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'fadeIn 0.2s ease', cursor: 'zoom-out' }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out', animation: 'fadeIn 0.2s ease' }}
         >
+          <button
+            onClick={() => setLightbox(false)}
+            style={{ position: 'fixed', top: 20, right: 20, background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', borderRadius: '50%', width: 44, height: 44, fontSize: 22, cursor: 'pointer', lineHeight: 1, zIndex: 1001 }}
+          >×</button>
           <div
             onClick={e => e.stopPropagation()}
-            style={{ background: 'linear-gradient(135deg, var(--blush), var(--cream))', borderRadius: 20, padding: 48, display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative', animation: 'scaleIn 0.25s cubic-bezier(0.34,1.56,0.64,1)' }}
+            style={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'scaleIn 0.25s cubic-bezier(0.34,1.56,0.64,1)' }}
           >
-            <button
-              onClick={() => setLightbox(false)}
-              style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(0,0,0,0.4)', border: 'none', color: 'white', borderRadius: '50%', width: 32, height: 32, fontSize: 18, cursor: 'pointer', lineHeight: 1 }}
-            >×</button>
-            <HairVisual image={product.image} size={340} />
+            {product.image?.startsWith('http') ? (
+              <img
+                src={product.image}
+                alt={product.name}
+                style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: 12, boxShadow: '0 24px 80px rgba(0,0,0,0.5)' }}
+              />
+            ) : (
+              <div style={{ background: 'linear-gradient(135deg, var(--blush), var(--cream))', borderRadius: 20, padding: 60, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <HairVisual image={product.image} size={420} />
+              </div>
+            )}
           </div>
           <style>{`
             @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
-            @keyframes scaleIn { from { transform: scale(0.7); opacity: 0 } to { transform: scale(1); opacity: 1 } }
+            @keyframes scaleIn { from { transform: scale(0.85); opacity: 0 } to { transform: scale(1); opacity: 1 } }
           `}</style>
         </div>
       )}

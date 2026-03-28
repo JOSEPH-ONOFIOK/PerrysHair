@@ -72,14 +72,20 @@ export default function ProductsPage() {
   const [cat, setCat] = useState(state.shopFilter || 'All');
   const [sort, setSort] = useState('default');
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const PER_PAGE = 14;
 
   // Sync when shopFilter changes (e.g. navigating from home style cards)
   useLayoutEffect(() => {
     if (state.shopFilter && state.shopFilter !== cat) {
       setCat(state.shopFilter);
-      dispatch({ type: 'SET_SHOP_FILTER', payload: 'All' }); // reset after reading
+      setPage(1);
+      dispatch({ type: 'SET_SHOP_FILTER', payload: 'All' });
     }
   }, [state.shopFilter]);
+
+  // Reset to page 1 whenever filters change
+  useEffect(() => { setPage(1); }, [cat, sort, search]);
 
   const categoryOptions = CATEGORIES.map((c) => ({ value: c, label: c }));
   const sortOptions = [
@@ -90,15 +96,19 @@ export default function ProductsPage() {
     { value: 'rating', label: '★ Top Rated' },
   ];
 
-  let prods = state.products.filter(
+  let allProds = state.products.filter(
     (p) =>
       (cat === 'All' || p.category === cat) &&
       (search === '' || p.name.toLowerCase().includes(search.toLowerCase()))
   );
-  if (sort === 'best') prods = prods.filter((p) => p.bestSeller);
-  else if (sort === 'low') prods = [...prods].sort((a, b) => a.price - b.price);
-  else if (sort === 'high') prods = [...prods].sort((a, b) => b.price - a.price);
-  else if (sort === 'rating') prods = [...prods].sort((a, b) => b.rating - a.rating);
+  if (sort === 'best') allProds = allProds.filter((p) => p.bestSeller);
+  else if (sort === 'low') allProds = [...allProds].sort((a, b) => a.price - b.price);
+  else if (sort === 'high') allProds = [...allProds].sort((a, b) => b.price - a.price);
+  else if (sort === 'rating') allProds = [...allProds].sort((a, b) => b.rating - a.rating);
+
+  const totalPages = Math.ceil(allProds.length / PER_PAGE);
+  const safePage = Math.min(page, totalPages || 1);
+  const prods = allProds.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE);
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 24px' }}>
@@ -123,13 +133,41 @@ export default function ProductsPage() {
         <StyledSelect value={sort} onChange={setSort} options={sortOptions} placeholder="Sort By" />
       </div>
 
-      <div style={{ fontSize: 13, color: 'var(--text-light)', marginBottom: 20 }}>{prods.length} product{prods.length !== 1 ? 's' : ''} found{cat !== 'All' ? ` in ${cat}` : ''}</div>
+      <div style={{ fontSize: 13, color: 'var(--text-light)', marginBottom: 20 }}>
+        {allProds.length} product{allProds.length !== 1 ? 's' : ''} found{cat !== 'All' ? ` in ${cat}` : ''}
+        {totalPages > 1 && <span style={{ marginLeft: 8 }}>· Page {safePage} of {totalPages}</span>}
+      </div>
 
       <div className="products-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 24 }}>
         {prods.map((p) => <ProductCard key={p.id} product={p} />)}
       </div>
 
-      {prods.length === 0 && (
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 48, flexWrap: 'wrap' }}>
+          <button
+            onClick={() => { setPage((p) => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'instant' }); }}
+            disabled={safePage === 1}
+            style={{ padding: '10px 20px', borderRadius: 8, border: '1.5px solid var(--border)', background: 'white', color: safePage === 1 ? 'var(--text-light)' : 'var(--text-dark)', cursor: safePage === 1 ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 14, opacity: safePage === 1 ? 0.5 : 1 }}
+          >← Prev</button>
+
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+            <button
+              key={n}
+              onClick={() => { setPage(n); window.scrollTo({ top: 0, behavior: 'instant' }); }}
+              style={{ width: 40, height: 40, borderRadius: 8, border: `1.5px solid ${n === safePage ? 'var(--gold)' : 'var(--border)'}`, background: n === safePage ? 'var(--gold)' : 'white', color: n === safePage ? 'white' : 'var(--text-dark)', cursor: 'pointer', fontWeight: n === safePage ? 700 : 400, fontSize: 14, transition: 'all 0.15s' }}
+            >{n}</button>
+          ))}
+
+          <button
+            onClick={() => { setPage((p) => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'instant' }); }}
+            disabled={safePage === totalPages}
+            style={{ padding: '10px 20px', borderRadius: 8, border: '1.5px solid var(--border)', background: 'white', color: safePage === totalPages ? 'var(--text-light)' : 'var(--text-dark)', cursor: safePage === totalPages ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 14, opacity: safePage === totalPages ? 0.5 : 1 }}
+          >Next →</button>
+        </div>
+      )}
+
+      {allProds.length === 0 && (
         <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-light)' }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
           <h3 style={{ fontFamily: 'Playfair Display', fontSize: 20 }}>No results found</h3>

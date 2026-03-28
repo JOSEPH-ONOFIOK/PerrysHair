@@ -138,7 +138,7 @@ function AppInner() {
   }, []);
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'instant' });
   }, [state.view]);
 
   // Scroll reveal — watches for .reveal / .reveal-left / .reveal-right elements

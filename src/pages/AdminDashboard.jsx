@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react';
+import { useContext, useState, useRef } from 'react';
 import { AppContext } from '../context.jsx';
 import { ORDER_STATUSES, CATEGORIES, TEXTURES, HAIR_GRADIENTS, QUALITY_TAGS, fmt } from '../data.js';
 import { insertProduct, updateProduct, deleteProduct, updateOrderStatus, deleteOrder, fetchOrders, saveDeliverySettings, saveBankDetails, uploadProductImage, getStockSubscribers, clearStockNotifications } from '../supabase.js';
@@ -29,6 +29,7 @@ export default function AdminDashboard() {
   const [uploading, setUploading] = useState(false);
   const [confirmDeleteOrder, setConfirmDeleteOrder] = useState(null);
   const [confirmResetAll, setConfirmResetAll] = useState(false);
+  const formRef = useRef(null);
 
   function handleFormChange(e) {
     const { name, value, type, checked } = e.target;
@@ -100,6 +101,7 @@ export default function AdminDashboard() {
     setImageFile(null);
     setImagePreview(product.image?.startsWith('http') ? product.image : null);
     dispatch({ type: 'SET_ADMIN_TAB', payload: 'products' });
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
   }
 
   if (!state.user?.isAdmin)
@@ -316,7 +318,7 @@ export default function AdminDashboard() {
             <h3 style={{ fontFamily: 'Playfair Display', fontSize: 17, marginBottom: 16 }}>
               {editingId !== null ? 'Edit Product' : 'Add New Product'}
             </h3>
-            <form onSubmit={handleSubmit}>
+            <form ref={formRef} onSubmit={handleSubmit}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, marginBottom: 12 }}>
                 <div>
                   <label style={{ fontSize: 12, color: 'var(--text-light)', display: 'block', marginBottom: 4 }}>Product Name *</label>
@@ -433,11 +435,14 @@ export default function AdminDashboard() {
 
           {/* Product list */}
           <h3 style={{ fontFamily: 'Playfair Display', fontSize: 16, marginBottom: 12 }}>All Products ({state.products.length})</h3>
-          {state.products.map((product) => (
+          {state.products.map((product, index) => (
             <div key={product.id} className="card" style={{ padding: '14px 20px', marginBottom: 10 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14 }}>{product.name}</div>
+                  <div style={{ fontWeight: 700, fontSize: 14 }}>
+                    <span style={{ color: 'var(--text-light)', fontWeight: 400, marginRight: 6 }}>#{index + 1}</span>
+                    {product.name}
+                  </div>
                   <div style={{ fontSize: 12, color: 'var(--text-light)', marginTop: 2 }}>
                     {product.category} • {product.length} • {product.color}
                   </div>

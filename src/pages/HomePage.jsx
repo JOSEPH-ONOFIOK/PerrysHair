@@ -1,4 +1,4 @@
-import { useContext } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import { AppContext } from '../context.jsx';
 import ProductCard from '../components/ProductCard.jsx';
 import HairVisual from '../components/HairVisual.jsx';
@@ -63,6 +63,25 @@ export default function HomePage() {
   const bestSellers = products.filter((p) => p.bestSeller);
   const topRated = [...products].sort((a, b) => b.rating - a.rating).slice(0, 8);
 
+  const [heroOffset, setHeroOffset] = useState(0);
+  const [heroFade, setHeroFade] = useState(true);
+
+  useEffect(() => {
+    if (products.length <= 4) return;
+    const id = setInterval(() => {
+      setHeroFade(false);
+      setTimeout(() => {
+        setHeroOffset((o) => (o + 4) % products.length);
+        setHeroFade(true);
+      }, 400);
+    }, 7000);
+    return () => clearInterval(id);
+  }, [products.length]);
+
+  const heroProducts = products.length > 0
+    ? Array.from({ length: 4 }, (_, i) => products[(heroOffset + i) % products.length])
+    : [];
+
   return (
     <div>
       {/* Hero */}
@@ -92,8 +111,8 @@ export default function HomePage() {
           </div>
           <div className="hide-mobile hero-products" style={{ display: 'flex', justifyContent: 'center', position: 'relative' }}>
             <div style={{ position: 'absolute', width: 320, height: 320, borderRadius: '50%', background: 'rgba(201,151,58,0.08)', top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }} />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              {products.slice(0, 4).map((p) => (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, opacity: heroFade ? 1 : 0, transition: 'opacity 0.4s ease' }}>
+              {heroProducts.map((p) => (
                 <div key={p.id} className="card" style={{ background: 'linear-gradient(135deg, rgba(255,249,240,0.08), rgba(255,249,240,0.03))', border: '1px solid rgba(201,151,58,0.2)', cursor: 'pointer' }}
                   onClick={() => dispatch({ type: 'SELECT_PRODUCT', payload: p })}>
                   <HairVisual image={p.image} size={100} style={{ display: 'block', margin: '16px auto 8px' }} />

@@ -137,6 +137,11 @@ function AppInner() {
       .finally(() => setVerifying(false));
   }, []);
 
+  // Scroll to top whenever the selected product changes (same-view navigation)
+  useEffect(() => {
+    if (state.view === 'product-detail') window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [state.selectedProduct?.id]);
+
   // Persist current view so refresh lands on the same page
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });

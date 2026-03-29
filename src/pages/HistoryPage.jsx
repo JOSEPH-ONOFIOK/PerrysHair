@@ -1,8 +1,9 @@
 import { useContext } from 'react';
 import { AppContext } from '../context.jsx';
 import HairVisual from '../components/HairVisual.jsx';
-import { ORDER_STATUSES } from '../data.js';
-import { useCurrency } from '../hooks/useCurrency.js';
+import BackButton from '../components/BackButton.jsx';
+
+
 
 export default function HistoryPage() {
   const { state, dispatch } = useContext(AppContext);
@@ -21,6 +22,7 @@ export default function HistoryPage() {
 
   return (
     <div style={{ maxWidth: 800, margin: '0 auto', padding: '40px 24px' }}>
+      <BackButton fallback="home" label="← Back" style={{ marginBottom: 16 }} />
       <h1 style={{ fontFamily: 'Playfair Display', fontSize: 30, marginBottom: 8 }}>Order History</h1>
       <p style={{ color: 'var(--text-light)', marginBottom: 32 }}>Track and manage all your Perrys Hairline orders</p>
 

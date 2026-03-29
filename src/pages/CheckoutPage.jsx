@@ -4,6 +4,7 @@ import HairVisual from '../components/HairVisual.jsx';
 import { supabase, insertOrder, decrementStock } from '../supabase.js';
 import { sendReceiptEmail } from '../email.js';
 import { applyCoupon } from '../coupons.js';
+import BackButton from '../components/BackButton.jsx';
 
 const COUNTRY_CURRENCY = {
   Nigeria:          { code: 'NGN', symbol: '₦' },
@@ -301,6 +302,7 @@ export default function CheckoutPage() {
 
   return (
     <div style={{ maxWidth: 960, margin: '0 auto', padding: 'clamp(24px,5vw,40px) clamp(16px,4vw,24px)' }}>
+      <BackButton fallback="cart" label="← Back to Cart" style={{ marginBottom: 16 }} />
       <h1 style={{ fontFamily: 'Playfair Display', fontSize: 30, marginBottom: 8 }}>Checkout</h1>
 
       {/* Steps */}

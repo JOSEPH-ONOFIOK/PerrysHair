@@ -1,6 +1,7 @@
 import { useContext } from 'react';
 import { AppContext } from '../context.jsx';
 import ProductCard from '../components/ProductCard.jsx';
+import BackButton from '../components/BackButton.jsx';
 
 export default function WishlistPage() {
   const { state, dispatch } = useContext(AppContext);
@@ -8,6 +9,7 @@ export default function WishlistPage() {
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 24px' }}>
+      <BackButton fallback="home" label="← Back" style={{ marginBottom: 16 }} />
       <div style={{ marginBottom: 32 }}>
         <h1 className="section-title">My Wishlist</h1>
         <p className="section-subtitle" style={{ marginTop: 6 }}>

@@ -20,9 +20,10 @@ const COUNTRY_CURRENCY = {
 const PAYSTACK_CURRENCIES = new Set(['NGN', 'USD', 'GHS', 'ZAR', 'KES']);
 
 const DELIVERY_META = {
-  lagos:         { label: 'Lagos (Same Day / Next Day)', desc: 'Uber Algorithm Pricing', time: '3–12 hours' },
-  nigeria:       { label: 'Nigeria (GUO / GIGM Bus)',   desc: 'GIGM/GUO Bus Delivery',  time: '1–3 days'   },
-  international: { label: 'International (DHL)',         desc: 'DHL Express + Duties',   time: '5–10 days'  },
+  lagos:   { label: 'Lagos',              desc: 'Fee paid directly to rider on delivery — price varies', time: 'Same Day / Next Day' },
+  nigeria: { label: 'Nigeria (Interstate)', desc: 'GUO / GIGM Bus Delivery — flat rate',                  time: 'Within a week or 6 working days' },
+  uk:      { label: 'United Kingdom',     desc: 'DHL Express + Duties',                                   time: '5–10 days' },
+  us:      { label: 'United States',      desc: 'DHL Express + Duties',                                   time: '7–14 days' },
 };
 
 const payOptions = [
@@ -364,7 +365,9 @@ export default function CheckoutPage() {
                         <div style={{ fontSize: 12, color: 'var(--text-light)', marginTop: 2 }}>{opt.desc} • {opt.time}</div>
                       </div>
                     </div>
-                    <span style={{ fontWeight: 700, color: 'var(--gold)' }}>{fmtLocal(opt.fee)}</span>
+                    <span style={{ fontWeight: 700, color: 'var(--gold)' }}>
+                      {opt.id === 'lagos' ? 'Pay on delivery' : fmtLocal(opt.fee)}
+                    </span>
                   </div>
                 </div>
               ))}

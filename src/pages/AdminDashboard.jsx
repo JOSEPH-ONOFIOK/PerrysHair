@@ -134,7 +134,7 @@ export default function AdminDashboard() {
   }, 0);
   const lagosOrders = state.orders.filter((o) => o.delivery === 'lagos');
   const nigOrders = state.orders.filter((o) => o.delivery === 'nigeria');
-  const intlOrders = state.orders.filter((o) => o.delivery === 'international');
+  const intlOrders = state.orders.filter((o) => o.delivery === 'uk' || o.delivery === 'us' || o.delivery === 'international');
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 24px' }}>
@@ -659,9 +659,10 @@ export default function AdminDashboard() {
               Set the delivery fee for each zone. Changes apply immediately to checkout.
             </p>
             {[
-              { key: 'lagos',         label: 'Lagos (Same Day / Next Day)', desc: 'Uber Algorithm Pricing' },
-              { key: 'nigeria',       label: 'Nigeria (GUO / GIGM Bus)',    desc: 'GIGM/GUO Bus Delivery'  },
-              { key: 'international', label: 'International (DHL)',          desc: 'DHL Express + Duties'   },
+              { key: 'lagos',   label: 'Lagos',               desc: 'Paid by customer to rider — set to 0 (shown as "Pay on delivery")' },
+              { key: 'nigeria', label: 'Nigeria (Interstate)', desc: 'GUO / GIGM Bus — flat rate'  },
+              { key: 'uk',      label: 'United Kingdom',       desc: 'DHL Express + Duties'        },
+              { key: 'us',      label: 'United States',        desc: 'DHL Express + Duties'        },
             ].map(({ key, label, desc }) => {
               const current = deliveryForm?.[key] ?? state.delivery[key] ?? 0;
               return (
@@ -693,9 +694,10 @@ export default function AdminDashboard() {
                 onClick={async () => {
                   setDeliverySaving(true);
                   const fees = {
-                    lagos:         Number(deliveryForm?.lagos         ?? state.delivery.lagos),
-                    nigeria:       Number(deliveryForm?.nigeria       ?? state.delivery.nigeria),
-                    international: Number(deliveryForm?.international ?? state.delivery.international),
+                    lagos:   Number(deliveryForm?.lagos   ?? state.delivery.lagos),
+                    nigeria: Number(deliveryForm?.nigeria ?? state.delivery.nigeria),
+                    uk:      Number(deliveryForm?.uk      ?? state.delivery.uk),
+                    us:      Number(deliveryForm?.us      ?? state.delivery.us),
                   };
                   try {
                     await saveDeliverySettings(fees);

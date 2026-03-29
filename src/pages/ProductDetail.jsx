@@ -5,6 +5,7 @@ import ProductCard from '../components/ProductCard.jsx';
 import ShareButton from '../components/ShareButton.jsx';
 import SizeGuideModal from '../components/SizeGuideModal.jsx';
 import { useCurrency } from '../hooks/useCurrency.js';
+import BackButton from '../components/BackButton.jsx';
 import { fetchReviews, upsertReview, subscribeToStockNotification } from '../supabase.js';
 
 function Stars({ rating, size = 16, interactive = false, onRate }) {
@@ -52,6 +53,7 @@ export default function ProductDetail() {
   const [notified, setNotified] = useState(false);
   const [notifying, setNotifying] = useState(false);
   const [sizeGuide, setSizeGuide] = useState(false);
+  const [capSize, setCapSize] = useState(null);
 
   const related = p
     ? state.products.filter((x) => x.category === p.category && x.id !== p.id).slice(0, 3)
@@ -112,10 +114,7 @@ export default function ProductDetail() {
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 24px' }}>
-      <button style={{ background: 'none', border: 'none', color: 'var(--text-light)', fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 24 }}
-        onClick={() => dispatch({ type: 'SET_VIEW', payload: 'products' })}>
-        ← Back to Shop
-      </button>
+      <BackButton fallback="products" label="← Back to Shop" style={{ marginBottom: 24 }} />
 
       <div className="product-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'clamp(24px,5vw,48px)', alignItems: 'start' }}>
         {/* Image */}
@@ -176,9 +175,9 @@ export default function ProductDetail() {
             <ShareButton product={product} />
             <button
               onClick={() => setSizeGuide(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--warm-white)', color: 'var(--text-mid)', border: '1.5px solid var(--border)', borderRadius: 8, padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, background: capSize ? 'linear-gradient(90deg,var(--blush),var(--cream))' : 'var(--warm-white)', color: capSize ? 'var(--gold-dark)' : 'var(--text-mid)', border: `1.5px solid ${capSize ? 'var(--gold)' : 'var(--border)'}`, borderRadius: 8, padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
             >
-              📏 Size Guide
+              📏 {capSize ? `Cap: ${capSize}` : 'Size Guide'}
             </button>
           </div>
 
@@ -369,7 +368,7 @@ export default function ProductDetail() {
       )}
 
       {/* Size Guide Modal */}
-      {sizeGuide && <SizeGuideModal onClose={() => setSizeGuide(false)} />}
+      {sizeGuide && <SizeGuideModal onClose={() => setSizeGuide(false)} selectedCapSize={capSize} onSelectCapSize={setCapSize} />}
     </div>
   );
 }

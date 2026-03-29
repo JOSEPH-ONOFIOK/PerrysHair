@@ -2,7 +2,7 @@ import { useContext, useState, useEffect, useRef } from 'react';
 import { AppContext } from '../context.jsx';
 import HairVisual from '../components/HairVisual.jsx';
 import { supabase, insertOrder, decrementStock } from '../supabase.js';
-import { sendReceiptEmail } from '../email.js';
+import { sendReceiptEmail, sendAdminNewOrderEmail } from '../email.js';
 import { applyCoupon } from '../coupons.js';
 import BackButton from '../components/BackButton.jsx';
 
@@ -168,7 +168,8 @@ export default function CheckoutPage() {
     } catch {
       // suppress unexpected errors — order proceeds
     }
-    sendReceiptEmail(order); // fire-and-forget
+    sendReceiptEmail(order);       // fire-and-forget
+    sendAdminNewOrderEmail(order); // notify admin
     order.items.forEach((item) => dispatch({ type: 'DECREMENT_STOCK', payload: { id: item.id, qty: item.qty } }));
     dispatch({ type: 'PLACE_ORDER', payload: order });
     if (!orderSaved) {

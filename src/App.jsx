@@ -63,11 +63,12 @@ function AppInner() {
       .then(async (data) => {
         if (data.paid) {
           const { insertOrder, decrementStock } = await import('./supabase.js');
-          const { sendReceiptEmail } = await import('./email.js');
+          const { sendReceiptEmail, sendAdminNewOrderEmail } = await import('./email.js');
           if (state.user?.id) await insertOrder(order, state.user.id).catch(() => {});
           decrementStock(order.items);
           order.items.forEach((item) => dispatch({ type: 'DECREMENT_STOCK', payload: { id: item.id, qty: item.qty } }));
           sendReceiptEmail(order);
+          sendAdminNewOrderEmail(order);
           dispatch({ type: 'PLACE_ORDER', payload: order });
           dispatch({ type: 'SET_TOAST', payload: { msg: 'Payment confirmed! Order placed 🎉', icon: '✅' } });
         } else {
@@ -121,13 +122,14 @@ function AppInner() {
       .then(async (data) => {
         if (data.paid) {
           const { insertOrder, decrementStock } = await import('./supabase.js');
-          const { sendReceiptEmail } = await import('./email.js');
+          const { sendReceiptEmail, sendAdminNewOrderEmail } = await import('./email.js');
           if (order.customer?.id || state.user?.id) {
             await insertOrder(order, state.user?.id).catch(console.error);
           }
           decrementStock(order.items);
           order.items.forEach((item) => dispatch({ type: 'DECREMENT_STOCK', payload: { id: item.id, qty: item.qty } }));
           sendReceiptEmail(order);
+          sendAdminNewOrderEmail(order);
           dispatch({ type: 'PLACE_ORDER', payload: order });
           dispatch({ type: 'SET_TOAST', payload: { msg: 'Payment confirmed! Order placed 🎉', icon: '✅' } });
         } else {

@@ -266,6 +266,55 @@ function backInStockEmail({ email, productName }) {
   };
 }
 
+function adminNewOrderEmail({ order }) {
+  const items = (order.items || []).map((i) =>
+    `<tr>
+      <td style="padding:10px 0;border-bottom:1px solid #f5e8ee;font-size:14px;color:#333">${esc(i.name)}${i.capSize ? ` <span style="color:#C9973A;font-size:12px">(Cap: ${esc(i.capSize)})</span>` : ''} × ${Number(i.qty)}</td>
+      <td style="padding:10px 0;border-bottom:1px solid #f5e8ee;font-size:14px;color:#333;text-align:right;font-weight:700">${fmt(i.price * i.qty)}</td>
+    </tr>`
+  ).join('');
+
+  const custName = esc(order.customer?.name) || 'Guest';
+  const custEmail = esc(order.customer?.email) || '—';
+  const custPhone = esc(order.customer?.phone) || '—';
+  const custAddress = [order.customer?.address, order.customer?.city, order.customer?.state].filter(Boolean).map(esc).join(', ') || '—';
+
+  return {
+    to: process.env.ADMIN_EMAIL || process.env.GMAIL_USER,
+    subject: `🛍️ New Order — ${esc(order.id)} (${fmt(order.total)})`,
+    html: wrap(`
+      ${h1('New Order Received! 🛍️')}
+      ${p(`A new order has just been placed on Perry's Hairline.`)}
+
+      <div style="background:#fdf0f5;border-radius:10px;padding:20px 24px;margin:20px 0">
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr><td style="font-size:12px;color:#999;padding-bottom:6px">Order ID</td><td style="font-size:13px;color:#3d1f1f;font-weight:700;text-align:right">${esc(order.id)}</td></tr>
+          <tr><td style="font-size:12px;color:#999;padding-bottom:6px">Date</td><td style="font-size:13px;color:#3d1f1f;text-align:right">${esc(order.date)}</td></tr>
+          <tr><td style="font-size:12px;color:#999;padding-bottom:6px">Delivery Zone</td><td style="font-size:13px;color:#3d1f1f;text-align:right;text-transform:capitalize">${esc(order.delivery)}</td></tr>
+          <tr><td style="font-size:12px;color:#999;padding-bottom:6px">Customer</td><td style="font-size:13px;color:#3d1f1f;font-weight:700;text-align:right">${custName}</td></tr>
+          <tr><td style="font-size:12px;color:#999;padding-bottom:6px">Email</td><td style="font-size:13px;color:#C9973A;text-align:right">${custEmail}</td></tr>
+          <tr><td style="font-size:12px;color:#999;padding-bottom:6px">Phone</td><td style="font-size:13px;color:#3d1f1f;text-align:right">${custPhone}</td></tr>
+          <tr><td style="font-size:12px;color:#999">Address</td><td style="font-size:13px;color:#3d1f1f;text-align:right">${custAddress}</td></tr>
+        </table>
+      </div>
+
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0">
+        <tr>
+          <td style="font-size:12px;color:#999;text-transform:uppercase;letter-spacing:1px;padding-bottom:8px">Items</td>
+          <td style="font-size:12px;color:#999;text-transform:uppercase;letter-spacing:1px;padding-bottom:8px;text-align:right">Amount</td>
+        </tr>
+        ${items}
+        <tr>
+          <td style="padding-top:14px;font-size:17px;font-weight:900;color:#3d1f1f">Order Total</td>
+          <td style="padding-top:14px;font-size:17px;font-weight:900;color:#C9973A;text-align:right">${fmt(order.total)}</td>
+        </tr>
+      </table>
+
+      <div style="text-align:center">${btn('View in Admin Dashboard', (process.env.APP_URL || 'https://perrys-hair.vercel.app') + '?view=admin')}</div>
+    `),
+  };
+}
+
 function cartReminderEmail({ name, email, items }) {
   const safeName = esc(name) || 'beautiful';
   const inStock = items.filter((i) => i.in_stock !== false);
@@ -331,6 +380,7 @@ export default async function handler(req, res) {
     }
     else if (type === 'cart-reminder')  config = cartReminderEmail(data);
     else if (type === 'back-in-stock')  config = backInStockEmail(data);
+    else if (type === 'admin-new-order') config = adminNewOrderEmail(data);
     else return res.status(400).json({ error: 'Unknown email type' });
 
     if (!config.to) return res.status(400).json({ error: 'No recipient email' });

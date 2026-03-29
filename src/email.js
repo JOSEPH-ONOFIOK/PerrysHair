@@ -19,3 +19,4 @@ export const sendReceiptEmail       = (order)                  => callEmail('rec
 export const sendTrackingEmail      = (orderId, status)        => callEmail('order-update', { orderId, status });
 export const sendForgotPassword     = (email, resetUrl)        => callEmail('forgot', { email, resetUrl });
 export const sendBackInStockEmail   = (email, productName)     => callEmail('back-in-stock', { email, productName });
+export const sendAdminNewOrderEmail = (order)                  => callEmail('admin-new-order', { order });

@@ -218,6 +218,7 @@ export async function insertOrder(order, userId) {
       product_name: i.name,
       product_price: i.price,
       qty: i.qty,
+      cap_size: i.capSize || null,
     }));
     const { error: itemsError } = await supabase.from('order_items').insert(items);
     if (itemsError) throw itemsError;

@@ -234,6 +234,17 @@ export default function AdminDashboard() {
                   </select>
                 </div>
               </div>
+              {/* Items breakdown */}
+              {order.items?.length > 0 && (
+                <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
+                  {order.items.map((item, idx) => (
+                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text-mid)', padding: '3px 0' }}>
+                      <span>• {item.name}{item.capSize ? <span style={{ color: 'var(--gold-dark)', fontWeight: 600 }}> — Cap: {item.capSize}</span> : ''} × {item.qty || 1}</span>
+                      <span style={{ color: 'var(--text-light)' }}>₦{((item.price * (item.qty || 1))).toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>

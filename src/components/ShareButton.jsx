@@ -4,7 +4,7 @@ export default function ShareButton({ product }) {
   const [copied, setCopied] = useState(false);
 
   const share = async () => {
-    const url = window.location.href; // includes ?product=ID
+    const url = `${window.location.origin}/?product=${product.id}`;
     const text = `Check out ${product.name} on Perry's Hairline`;
     if (navigator.share) {
       try {

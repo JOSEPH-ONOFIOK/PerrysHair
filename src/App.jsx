@@ -178,7 +178,7 @@ function AppInner() {
     const productId = params.get('product');
     const view = params.get('view');
     if (productId) {
-      const product = state.products.find((p) => p.id === productId);
+      const product = state.products.find((p) => String(p.id) === String(productId));
       if (product) { dispatch({ type: 'SELECT_PRODUCT', payload: product }); return; }
     }
     if (view) {
@@ -195,7 +195,7 @@ function AppInner() {
       const productId = params.get('product');
       const view = params.get('view') || 'home';
       if (productId) {
-        const product = state.products.find((p) => p.id === productId);
+        const product = state.products.find((p) => String(p.id) === String(productId));
         if (product) dispatch({ type: 'SELECT_PRODUCT', payload: product });
         else dispatch({ type: 'SET_VIEW', payload: 'products' });
       } else {

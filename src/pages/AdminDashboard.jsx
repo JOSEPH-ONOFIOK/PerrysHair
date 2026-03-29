@@ -1,7 +1,7 @@
 import { useContext, useState, useRef, useEffect } from 'react';
 import { AppContext } from '../context.jsx';
 import { ORDER_STATUSES, CATEGORIES, TEXTURES, HAIR_GRADIENTS, QUALITY_TAGS, fmt } from '../data.js';
-import { insertProduct, updateProduct, deleteProduct, updateOrderStatus, deleteOrder, fetchOrders, saveDeliverySettings, saveBankDetails, uploadProductImage, getStockSubscribers, clearStockNotifications } from '../supabase.js';
+import { insertProduct, updateProduct, deleteProduct, updateOrderStatus, deleteOrder, fetchOrders, saveDeliverySettings, saveBankDetails, uploadProductImage, getStockSubscribers, clearStockNotifications, fetchAllProfiles } from '../supabase.js';
 import { sendTrackingEmail, sendBackInStockEmail } from '../email.js';
 
 const GRADIENT_KEYS = Object.keys(HAIR_GRADIENTS);
@@ -15,6 +15,115 @@ const EMPTY_FORM = {
 
 
 const FORM_DRAFT_KEY = 'perrys_admin_form_draft';
+
+function CustomersTab({ orders, fmt }) {
+  const [profiles, setProfiles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState(null);
+
+  useEffect(() => {
+    fetchAllProfiles()
+      .then(setProfiles)
+      .catch(() => setProfiles([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  // Map orders by user_id and by email for guest orders
+  const ordersByUserId = {};
+  const ordersByEmail = {};
+  orders.forEach((o) => {
+    if (o.userId) {
+      if (!ordersByUserId[o.userId]) ordersByUserId[o.userId] = [];
+      ordersByUserId[o.userId].push(o);
+    } else if (o.customer?.email) {
+      const key = o.customer.email.toLowerCase();
+      if (!ordersByEmail[key]) ordersByEmail[key] = [];
+      ordersByEmail[key].push(o);
+    }
+  });
+
+  const profilesWithOrders = profiles.map((p) => ({
+    ...p,
+    orders: ordersByUserId[p.id] || [],
+  }));
+
+  const totalSpend = (userOrders) => userOrders.reduce((s, o) => s + o.total, 0);
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <h3 style={{ fontFamily: 'Playfair Display', fontSize: 17 }}>
+          {loading ? 'Loading…' : `Customers (${profiles.length})`}
+        </h3>
+        <div style={{ fontSize: 13, color: 'var(--text-light)' }}>
+          Total revenue: <strong style={{ color: 'var(--gold)' }}>{fmt(orders.reduce((s, o) => s + o.total, 0))}</strong>
+        </div>
+      </div>
+
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-light)' }}>Loading customers…</div>
+      ) : profiles.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-light)', fontSize: 14 }}>No customers signed up yet</div>
+      ) : profilesWithOrders.map((c) => {
+        const isOpen = expanded === c.id;
+        const spent = totalSpend(c.orders);
+        return (
+          <div key={c.id} className="card" style={{ marginBottom: 10, overflow: 'hidden' }}>
+            <div
+              style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, cursor: 'pointer' }}
+              onClick={() => setExpanded(isOpen ? null : c.id)}
+            >
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                <div style={{ width: 42, height: 42, borderRadius: '50%', background: 'linear-gradient(135deg,var(--blush),var(--cream))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>👤</div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 14 }}>{c.name || 'Unnamed'}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-light)' }}>{c.email}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-light)', marginTop: 2 }}>
+                    Joined {c.created_at ? new Date(c.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontWeight: 700, color: 'var(--gold)', fontSize: 14 }}>{fmt(spent)}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-light)' }}>{c.orders.length} order{c.orders.length !== 1 ? 's' : ''}</div>
+                </div>
+                <span style={{ fontSize: 12, color: 'var(--text-light)', transition: 'transform 0.2s', display: 'inline-block', transform: isOpen ? 'rotate(180deg)' : 'none' }}>▼</span>
+              </div>
+            </div>
+
+            {isOpen && (
+              <div style={{ borderTop: '1px solid var(--border)', padding: '16px 20px', background: 'var(--warm-white)' }}>
+                {c.orders.length === 0 ? (
+                  <p style={{ fontSize: 13, color: 'var(--text-light)', margin: 0 }}>No orders yet.</p>
+                ) : c.orders.map((o) => (
+                  <div key={o.id} style={{ marginBottom: 14, paddingBottom: 14, borderBottom: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
+                      <div>
+                        <span style={{ fontWeight: 700, fontSize: 13 }}>{o.id}</span>
+                        <span style={{ fontSize: 12, color: 'var(--text-light)', marginLeft: 8 }}>{o.date}</span>
+                        <span style={{ fontSize: 12, color: 'var(--text-light)', marginLeft: 8 }}>· {o.delivery}</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <span style={{ fontWeight: 700, color: 'var(--gold)', fontSize: 13 }}>{fmt(o.total)}</span>
+                        <span className={`badge ${o.status >= 5 ? 'badge-green' : 'badge-gold'}`} style={{ fontSize: 11 }}>{ORDER_STATUSES[o.status]}</span>
+                      </div>
+                    </div>
+                    {o.items?.map((item, idx) => (
+                      <div key={idx} style={{ fontSize: 12, color: 'var(--text-mid)', marginTop: 4, paddingLeft: 8 }}>
+                        • {item.name}{item.capSize ? <span style={{ color: 'var(--gold-dark)', fontWeight: 600 }}> — Cap: {item.capSize}</span> : ''} × {item.qty || 1} &nbsp;·&nbsp; {fmt(item.price * (item.qty || 1))}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function AdminDashboard() {
   const { state, dispatch } = useContext(AppContext);
@@ -612,49 +721,7 @@ export default function AdminDashboard() {
       )}
 
       {/* Customers tab */}
-      {tab === 'customers' && (() => {
-        // Aggregate unique customers from orders
-        const customerMap = {};
-        state.orders.forEach((o) => {
-          if (!o.customer?.email) return;
-          const key = o.customer.email;
-          if (!customerMap[key]) customerMap[key] = { name: o.customer.name, email: key, orders: 0, spent: 0 };
-          customerMap[key].orders++;
-          customerMap[key].spent += o.total;
-        });
-        const customers = Object.values(customerMap).sort((a, b) => b.spent - a.spent);
-        return (
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h3 style={{ fontFamily: 'Playfair Display', fontSize: 17 }}>Customers ({customers.length})</h3>
-              <div style={{ fontSize: 13, color: 'var(--text-light)' }}>
-                Total revenue: <strong style={{ color: 'var(--gold)' }}>{fmt(customers.reduce((s, c) => s + c.spent, 0))}</strong>
-              </div>
-            </div>
-            {customers.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-light)', fontSize: 14 }}>
-                No customer orders yet
-              </div>
-            ) : customers.map((c) => (
-              <div key={c.email} className="card" style={{ padding: '16px 20px', marginBottom: 10 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--blush)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>👤</div>
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: 14 }}>{c.name}</div>
-                      <div style={{ fontSize: 12, color: 'var(--text-light)' }}>{c.email}</div>
-                    </div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontWeight: 700, color: 'var(--gold)', fontSize: 14 }}>{fmt(c.spent)}</div>
-                    <div style={{ fontSize: 12, color: 'var(--text-light)' }}>{c.orders} order{c.orders !== 1 ? 's' : ''}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        );
-      })()}
+      {tab === 'customers' && <CustomersTab orders={state.orders} fmt={fmt} />}
 
       {/* Delivery Pricing tab */}
       {tab === 'delivery' && (

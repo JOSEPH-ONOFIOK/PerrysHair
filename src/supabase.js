@@ -104,6 +104,15 @@ export async function fetchProfile(userId) {
   return data;
 }
 
+export async function fetchAllProfiles() {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
 // ── Products ──────────────────────────────────────────────────────────────────
 
 export async function fetchProducts() {

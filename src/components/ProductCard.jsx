@@ -84,11 +84,11 @@ export default function ProductCard({ product, compact = false }) {
 
         {/* Price + rating pushed to bottom */}
         <div style={{ marginTop: 'auto' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 4, marginBottom: compact ? 0 : 10 }}>
-            <div>
-              <span style={{ fontWeight: 700, fontSize: compact ? 14 : 16, color: 'var(--gold)' }}>{fmtPrice(product.price)}</span>
+          <div style={{ marginBottom: compact ? 0 : 10 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'nowrap', overflow: 'hidden' }}>
+              <span style={{ fontWeight: 700, fontSize: compact ? 14 : 16, color: 'var(--gold)', flexShrink: 0 }}>{fmtPrice(product.price)}</span>
               {product.originalPrice && (
-                <span style={{ fontSize: 11, color: 'var(--text-light)', textDecoration: 'line-through', marginLeft: 5 }}>{fmtPrice(product.originalPrice)}</span>
+                <span style={{ fontSize: 11, color: 'var(--text-light)', textDecoration: 'line-through', flexShrink: 0 }}>{fmtPrice(product.originalPrice)}</span>
               )}
             </div>
             <span style={{ fontSize: 11, color: 'var(--text-light)' }}>★ {product.rating} ({product.reviews})</span>

@@ -167,10 +167,13 @@ function AppInner() {
     if (newUrl !== currentUrl) window.history.pushState(null, '', newUrl);
   }, [state.view, state.selectedProduct?.id]);
 
-  // Restore view from URL on first load (once products are available)
+  // Restore view from URL on first load — waits for products to actually be available
   const urlRestored = useRef(false);
   useEffect(() => {
-    if (state.loading || urlRestored.current) return;
+    // Don't mark as done until products are loaded — auth resolves before products,
+    // so loading:false can fire with an empty products array (race condition)
+    if (state.loading || state.products.length === 0) return;
+    if (urlRestored.current) return;
     urlRestored.current = true;
     const params = new URLSearchParams(window.location.search);
     // Don't interfere with payment redirect params
@@ -185,7 +188,7 @@ function AppInner() {
       const allowed = ['products', 'cart', 'history', 'wishlist', 'checkout'];
       if (allowed.includes(view)) dispatch({ type: 'SET_VIEW', payload: view });
     }
-  }, [state.loading]);
+  }, [state.loading, state.products.length]);
 
   // Handle browser back / forward buttons
   useEffect(() => {

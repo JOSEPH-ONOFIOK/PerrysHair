@@ -2,6 +2,8 @@ import { useContext } from 'react';
 import { AppContext } from '../context.jsx';
 import HairVisual from '../components/HairVisual.jsx';
 import BackButton from '../components/BackButton.jsx';
+import { ORDER_STATUSES } from '../data.js';
+import { useCurrency } from '../hooks/useCurrency.js';
 
 
 

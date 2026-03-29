@@ -210,7 +210,7 @@ export default function ProductDetail() {
           <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
             <button className="btn-primary" style={{ flex: 1, minWidth: 140, justifyContent: 'center', padding: '15px', fontSize: 15, background: product.inStock ? undefined : 'var(--text-light)' }}
               onClick={() => {
-                dispatch({ type: 'ADD_TO_CART', payload: product });
+                dispatch({ type: 'ADD_TO_CART', payload: { ...product, capSize: capSize || null } });
                 dispatch({ type: 'SET_TOAST', payload: { msg: product.inStock ? 'Added to cart!' : 'Saved — checkout when it restocks!', icon: product.inStock ? '🛍️' : '🔔' } });
               }}>
               {product.inStock ? '🛍️ Add to Cart' : '🛍️ Save to Cart'}
@@ -218,7 +218,7 @@ export default function ProductDetail() {
             <button className="btn-dark" style={{ padding: '15px 24px', opacity: product.inStock ? 1 : 0.5, cursor: product.inStock ? 'pointer' : 'not-allowed' }}
               disabled={!product.inStock}
               onClick={() => {
-                dispatch({ type: 'ADD_TO_CART', payload: product });
+                dispatch({ type: 'ADD_TO_CART', payload: { ...product, capSize: capSize || null } });
                 dispatch({ type: 'SET_VIEW', payload: 'checkout' });
               }}>
               Buy Now

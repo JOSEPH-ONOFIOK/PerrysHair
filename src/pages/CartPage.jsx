@@ -2,6 +2,7 @@ import { useContext } from 'react';
 import { AppContext } from '../context.jsx';
 import HairVisual from '../components/HairVisual.jsx';
 import { useCurrency } from '../hooks/useCurrency.js';
+import BackButton from '../components/BackButton.jsx';
 
 export default function CartPage() {
   const { state, dispatch } = useContext(AppContext);
@@ -29,6 +30,7 @@ export default function CartPage() {
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: '40px 24px' }}>
+      <BackButton fallback="products" label="← Continue Shopping" style={{ marginBottom: 16 }} />
       <h1 style={{ fontFamily: 'Playfair Display', fontSize: 32, marginBottom: 32 }}>Shopping Cart</h1>
       <div className="cart-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 32 }}>
         {/* Items */}
@@ -42,7 +44,7 @@ export default function CartPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
                   <div>
                     <div style={{ fontFamily: 'Playfair Display', fontSize: 16, fontWeight: 700 }}>{item.name}</div>
-                    <div style={{ fontSize: 12, color: 'var(--text-light)', marginTop: 3 }}>{item.category} • {item.length}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-light)', marginTop: 3 }}>{item.category} • {item.length}{item.capSize ? ` • Cap: ${item.capSize}` : ''}</div>
                   </div>
                   <button onClick={() => dispatch({ type: 'REMOVE_FROM_CART', payload: item.id })}
                     style={{ background: 'none', border: 'none', color: 'var(--text-light)', fontSize: 18, cursor: 'pointer' }}>×</button>

@@ -3,19 +3,17 @@ import { AppContext } from '../context.jsx';
 import HairVisual from '../components/HairVisual.jsx';
 import { ORDER_STATUSES } from '../data.js';
 import { useCurrency } from '../hooks/useCurrency.js';
+import BackButton from '../components/BackButton.jsx';
 
 export default function OrderTracking() {
-  const { state, dispatch } = useContext(AppContext);
+  const { state } = useContext(AppContext);
   const { fmtPrice } = useCurrency();
   const order = state.selectedOrder;
   if (!order) return null;
 
   return (
     <div style={{ maxWidth: 700, margin: '0 auto', padding: '40px 24px' }}>
-      <button style={{ background: 'none', border: 'none', color: 'var(--text-light)', fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 24 }}
-        onClick={() => dispatch({ type: 'SET_VIEW', payload: 'history' })}>
-        ← Back to Orders
-      </button>
+      <BackButton fallback="history" label="← Back to Orders" style={{ marginBottom: 24 }} />
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 24, flexWrap: 'wrap', gap: 8 }}>
         <div>
@@ -65,7 +63,7 @@ export default function OrderTracking() {
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 600 }}>{item.name}</div>
-              <div style={{ fontSize: 12, color: 'var(--text-light)' }}>{item.category} • {item.length}</div>
+              <div style={{ fontSize: 12, color: 'var(--text-light)' }}>{item.category} • {item.length}{item.capSize ? ` • Cap: ${item.capSize}` : ''}</div>
             </div>
             <span style={{ fontWeight: 700, color: 'var(--gold)' }}>{fmtPrice(item.price * (item.qty || 1))}</span>
           </div>

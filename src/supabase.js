@@ -243,7 +243,7 @@ export async function deleteOrder(orderId) {
 
 export const DEFAULT_DELIVERY = {
   lagos: 0,
-  nigeria: 12000,
+  nigeria: 10000,
   uk: 75000,
   us: 85000,
 };

@@ -128,10 +128,6 @@ export default function AdminDashboard() {
 
   const tab = state.adminTab;
   const totalRevenue = state.orders.reduce((s, o) => s + o.total, 0);
-  const totalVat = state.orders.reduce((s, o) => {
-    const subtotal = (o.items || []).reduce((sum, i) => sum + i.price * i.qty, 0);
-    return s + Math.round(subtotal * 0.025);
-  }, 0);
   const lagosOrders = state.orders.filter((o) => o.delivery === 'lagos');
   const nigOrders = state.orders.filter((o) => o.delivery === 'nigeria');
   const intlOrders = state.orders.filter((o) => o.delivery === 'uk' || o.delivery === 'us' || o.delivery === 'international');
@@ -150,7 +146,6 @@ export default function AdminDashboard() {
       <div className="admin-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 28 }}>
         {[
           ['Total Revenue', fmt(totalRevenue), '💰', '#E8F5EE', '#2D7A51'],
-          ['VAT Collected (2.5%)', fmt(totalVat), '🧾', '#F5F0FF', '#5B2DB0'],
           ['Total Orders', state.orders.length, '📦', '#FFF3E0', '#B06000'],
           ['Lagos Orders', lagosOrders.length, '🏙️', '#E8F0FF', '#2D4CB0'],
           ['National', nigOrders.length, '🇳🇬', '#FFF0F5', '#B02D5A'],

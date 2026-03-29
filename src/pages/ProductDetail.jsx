@@ -171,13 +171,39 @@ export default function ProductDetail() {
             </div>
           )}
 
+          {/* Cap Size Selector */}
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-dark)' }}>Cap Size</span>
+              <button onClick={() => setSizeGuide(true)} style={{ background: 'none', border: 'none', fontSize: 12, color: 'var(--gold)', cursor: 'pointer', padding: 0, textDecoration: 'underline', fontWeight: 600 }}>How to measure?</button>
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {['Petite (Small)', 'Average (Medium)', 'Large'].map((size) => (
+                <button
+                  key={size}
+                  onClick={() => setCapSize(capSize === size ? null : size)}
+                  style={{
+                    padding: '9px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                    border: `2px solid ${capSize === size ? 'var(--gold)' : 'var(--border)'}`,
+                    background: capSize === size ? 'linear-gradient(90deg,var(--blush),var(--cream))' : 'white',
+                    color: capSize === size ? 'var(--gold-dark)' : 'var(--text-dark)',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
+            {!capSize && <p style={{ fontSize: 12, color: 'var(--text-light)', marginTop: 6 }}>Select a cap size before adding to cart</p>}
+          </div>
+
           <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
             <ShareButton product={product} />
             <button
               onClick={() => setSizeGuide(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, background: capSize ? 'linear-gradient(90deg,var(--blush),var(--cream))' : 'var(--warm-white)', color: capSize ? 'var(--gold-dark)' : 'var(--text-mid)', border: `1.5px solid ${capSize ? 'var(--gold)' : 'var(--border)'}`, borderRadius: 8, padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--warm-white)', color: 'var(--text-mid)', border: '1.5px solid var(--border)', borderRadius: 8, padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
             >
-              📏 {capSize ? `Cap: ${capSize}` : 'Size Guide'}
+              📏 Size Guide
             </button>
           </div>
 

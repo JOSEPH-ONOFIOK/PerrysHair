@@ -404,6 +404,11 @@ export default function CheckoutPage() {
                   <strong>Important:</strong> After completing payment on Paystack, <strong>return to this page</strong> to confirm your order. Do not close your browser — your order will be confirmed automatically once you're back.
                 </div>
               )}
+              {payMethod === 'paystack' && currency.code !== 'NGN' && (
+                <div style={{ background: '#f0f4ff', border: '1px solid #c0cff5', borderRadius: 8, padding: '12px 14px', marginBottom: 16, fontSize: 13, color: '#2d3a7a', lineHeight: 1.6 }}>
+                  🌍 <strong>International card notice:</strong> Your card will be charged in <strong>USD</strong> — your bank converts automatically. If your bank blocks the payment, try a Revolut or Wise card, or contact your bank to approve international transactions.
+                </div>
+              )}
               {payMethod === 'transfer' && (
                 <div style={{ background: 'var(--warm-white)', border: '1px solid var(--border)', borderRadius: 8, padding: 16, marginBottom: 16 }}>
                   <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8 }}>Transfer Details</div>

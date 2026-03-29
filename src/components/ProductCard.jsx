@@ -4,7 +4,7 @@ import HairVisual from './HairVisual.jsx';
 import { useCurrency } from '../hooks/useCurrency.js';
 
 
-export default function ProductCard({ product, compact = false }) {
+export default function ProductCard({ product, compact = false, priority = false }) {
   const { state, dispatch } = useContext(AppContext);
   const { fmtPrice } = useCurrency();
   const [clicking, setClicking] = useState(false);
@@ -29,7 +29,7 @@ export default function ProductCard({ product, compact = false }) {
         display: 'flex', justifyContent: 'center', alignItems: 'center',
         position: 'relative', flexShrink: 0,
       }}>
-        <HairVisual image={product.image} size={compact ? 100 : 140} />
+        <HairVisual image={product.image} size={compact ? 100 : 140} priority={priority} />
         {product.bestSeller && (
           <span className="badge badge-gold" style={{ position: 'absolute', top: 10, left: 10, fontSize: 10 }}>Best Seller</span>
         )}

@@ -13,9 +13,21 @@ export default defineConfig({
   server: { headers: securityHeaders },
   preview: { headers: securityHeaders },
   build: {
-    // Strip all console.* calls from the production bundle
     minify: 'esbuild',
     target: 'es2020',
+    cssCodeSplit: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // React core — rarely changes, cached long-term by browser
+          'vendor-react': ['react', 'react-dom'],
+          // Supabase SDK — large, split out separately
+          'vendor-supabase': ['@supabase/supabase-js'],
+          // Vercel analytics
+          'vendor-analytics': ['@vercel/analytics'],
+        },
+      },
+    },
   },
   esbuild: {
     drop: ['console', 'debugger'],

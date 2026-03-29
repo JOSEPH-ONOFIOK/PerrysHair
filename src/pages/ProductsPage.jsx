@@ -141,7 +141,7 @@ export default function ProductsPage() {
       </div>
 
       <div className="products-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 24 }}>
-        {prods.map((p) => <ProductCard key={p.id} product={p} />)}
+        {prods.map((p, i) => <ProductCard key={p.id} product={p} priority={i < 4} />)}
       </div>
 
       {/* Pagination */}

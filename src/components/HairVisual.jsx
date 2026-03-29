@@ -86,7 +86,7 @@ const SHAPES = {
   ),
 };
 
-export default function HairVisual({ image, style = {}, size = 200 }) {
+export default function HairVisual({ image, style = {}, size = 200, priority = false }) {
   // If image is a real URL, render a photo instead of SVG
   if (image && (image.startsWith('http') || image.startsWith('blob:'))) {
     return (
@@ -95,8 +95,9 @@ export default function HairVisual({ image, style = {}, size = 200 }) {
         alt="product"
         width={size}
         height={size}
-        loading="lazy"
-        decoding="async"
+        loading={priority ? 'eager' : 'lazy'}
+        decoding={priority ? 'sync' : 'async'}
+        fetchPriority={priority ? 'high' : 'low'}
         style={{ objectFit: 'cover', borderRadius: 8, display: 'block', ...style }}
       />
     );

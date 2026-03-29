@@ -360,7 +360,7 @@ export default function ProductDetail() {
               />
             ) : (
               <div style={{ background: 'linear-gradient(135deg, var(--blush), var(--cream))', borderRadius: 20, padding: 60, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <HairVisual image={product.image} size={420} />
+                <HairVisual image={product.image} size={420} priority={true} />
               </div>
             )}
           </div>

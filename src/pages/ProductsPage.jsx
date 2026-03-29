@@ -1,6 +1,7 @@
 import { useContext, useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { AppContext } from '../context.jsx';
 import ProductCard from '../components/ProductCard.jsx';
+import BackButton from '../components/BackButton.jsx';
 import { CATEGORIES } from '../data.js';
 
 function StyledSelect({ value, onChange, options, placeholder }) {
@@ -112,6 +113,7 @@ export default function ProductsPage() {
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 24px' }}>
+      <BackButton fallback="home" label="← Back" style={{ marginBottom: 12 }} />
       <div style={{ marginBottom: 32 }}>
         <h1 className="section-title">Our Collection</h1>
         <p className="section-subtitle" style={{ marginTop: 6 }}>Premium human hair, handpicked for you</p>

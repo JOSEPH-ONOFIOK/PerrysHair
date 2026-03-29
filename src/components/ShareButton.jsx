@@ -4,16 +4,17 @@ export default function ShareButton({ product }) {
   const [copied, setCopied] = useState(false);
 
   const share = async () => {
-    const text = `Check out ${product.name} on Perry's Hairline — ${window.location.origin}`;
+    const url = window.location.href; // includes ?product=ID
+    const text = `Check out ${product.name} on Perry's Hairline`;
     if (navigator.share) {
       try {
-        await navigator.share({ title: product.name, text, url: window.location.origin });
+        await navigator.share({ title: product.name, text, url });
         return;
       } catch {}
     }
     // Fallback: copy to clipboard
     try {
-      await navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(url);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {}

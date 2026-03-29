@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { AppProvider, AppContext } from './context.jsx';
 import GlobalStyles from './GlobalStyles.jsx';
 
@@ -146,44 +146,65 @@ function AppInner() {
     if (state.view === 'product-detail') window.scrollTo({ top: 0, behavior: 'instant' });
   }, [state.selectedProduct?.id]);
 
-  // Persist current view so refresh lands on the same page
+  // ── URL-based navigation ─────────────────────────────────────────────────────
+  // Sync view → URL so sharing and refresh work correctly
+  const urlSynced = useRef(false);
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
+    // Skip first render — don't overwrite the URL the user arrived on
+    if (!urlSynced.current) { urlSynced.current = true; return; }
     const skip = ['auth', 'reset-password'];
     if (skip.includes(state.view)) return;
-    try {
-      sessionStorage.setItem('perrys_view', JSON.stringify({
-        view: state.view,
-        productId: state.selectedProduct?.id ?? null,
-        orderId: state.selectedOrder?.id ?? null,
-      }));
-    } catch {}
-  }, [state.view, state.selectedProduct?.id, state.selectedOrder?.id]);
 
-  // On mount: restore view from sessionStorage once products have loaded
+    const params = new URLSearchParams();
+    if (state.view === 'product-detail' && state.selectedProduct?.id) {
+      params.set('product', state.selectedProduct.id);
+    } else if (state.view !== 'home') {
+      params.set('view', state.view);
+    }
+    const newUrl = params.toString() ? `/?${params}` : '/';
+    const currentUrl = window.location.pathname + window.location.search;
+    if (newUrl !== currentUrl) window.history.pushState(null, '', newUrl);
+  }, [state.view, state.selectedProduct?.id]);
+
+  // Restore view from URL on first load (once products are available)
+  const urlRestored = useRef(false);
   useEffect(() => {
-    if (state.loading) return; // wait for products
-    try {
-      const raw = sessionStorage.getItem('perrys_view');
-      if (!raw) return;
-      const { view, productId, orderId } = JSON.parse(raw);
-      // Only restore once — don't fight user navigation
-      sessionStorage.removeItem('perrys_view');
-      if (!view || view === 'home') return;
-
-      if (view === 'product-detail' && productId) {
-        const product = state.products.find((p) => p.id === productId);
-        if (product) { dispatch({ type: 'SELECT_PRODUCT', payload: product }); return; }
-      }
-      if (view === 'order-tracking' && orderId) {
-        const order = state.orders.find((o) => o.id === orderId);
-        if (order) { dispatch({ type: 'SELECT_ORDER', payload: order }); return; }
-      }
-      // For all other views just restore directly
-      const simple = ['products', 'cart', 'history', 'admin', 'checkout', 'wishlist'];
-      if (simple.includes(view)) dispatch({ type: 'SET_VIEW', payload: view });
-    } catch {}
+    if (state.loading || urlRestored.current) return;
+    urlRestored.current = true;
+    const params = new URLSearchParams(window.location.search);
+    // Don't interfere with payment redirect params
+    if (params.has('payment_ref') || params.has('trxref') || params.has('reference')) return;
+    const productId = params.get('product');
+    const view = params.get('view');
+    if (productId) {
+      const product = state.products.find((p) => p.id === productId);
+      if (product) { dispatch({ type: 'SELECT_PRODUCT', payload: product }); return; }
+    }
+    if (view) {
+      const allowed = ['products', 'cart', 'history', 'wishlist', 'checkout'];
+      if (allowed.includes(view)) dispatch({ type: 'SET_VIEW', payload: view });
+    }
   }, [state.loading]);
+
+  // Handle browser back / forward buttons
+  useEffect(() => {
+    if (state.loading) return;
+    const handlePop = () => {
+      const params = new URLSearchParams(window.location.search);
+      const productId = params.get('product');
+      const view = params.get('view') || 'home';
+      if (productId) {
+        const product = state.products.find((p) => p.id === productId);
+        if (product) dispatch({ type: 'SELECT_PRODUCT', payload: product });
+        else dispatch({ type: 'SET_VIEW', payload: 'products' });
+      } else {
+        dispatch({ type: 'SET_VIEW', payload: view });
+      }
+    };
+    window.addEventListener('popstate', handlePop);
+    return () => window.removeEventListener('popstate', handlePop);
+  }, [state.products, state.loading]);
 
   // Scroll reveal — watches for .reveal / .reveal-left / .reveal-right elements
   useEffect(() => {

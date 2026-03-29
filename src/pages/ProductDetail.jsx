@@ -153,12 +153,12 @@ export default function ProductDetail() {
             <span style={{ fontSize: 13, color: 'var(--text-light)' }}>{product.rating > 0 ? product.rating.toFixed(1) : 'No ratings yet'} {product.reviews > 0 ? `(${product.reviews} review${product.reviews !== 1 ? 's' : ''})` : ''}</span>
           </div>
           <div style={{ marginBottom: 24 }}>
-            <span style={{ fontFamily: 'Playfair Display', fontSize: 36, fontWeight: 700, color: 'var(--gold)' }}>{fmtPrice(product.price)}</span>
+            <span style={{ fontFamily: 'Playfair Display', fontSize: 36, fontWeight: 700, color: 'var(--gold)', display: 'block' }}>{fmtPrice(product.price)}</span>
             {product.originalPrice && (
-              <>
-                <span style={{ fontSize: 16, color: 'var(--text-light)', textDecoration: 'line-through', marginLeft: 10 }}>{fmtPrice(product.originalPrice)}</span>
-                <span className="badge" style={{ background: '#E8F5EE', color: '#2D7A51', marginLeft: 10 }}>Save {fmtPrice(product.originalPrice - product.price)}</span>
-              </>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                <span style={{ fontSize: 15, color: 'var(--text-light)', textDecoration: 'line-through' }}>{fmtPrice(product.originalPrice)}</span>
+                <span className="badge" style={{ background: '#E8F5EE', color: '#2D7A51' }}>Save {fmtPrice(product.originalPrice - product.price)}</span>
+              </div>
             )}
           </div>
           <p style={{ fontSize: 15, lineHeight: 1.8, color: 'var(--text-mid)', marginBottom: product.qualityTags?.length ? 16 : 28 }}>{product.description}</p>

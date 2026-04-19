@@ -16,7 +16,7 @@ const COUNTRY_CURRENCY = {
   Canada:           { code: 'CAD', symbol: 'CA$' },
   Other:            { code: 'USD', symbol: '$' },
 };
-
+ 
 // Currencies Paystack can charge in (fall back to USD if not listed)
 const PAYSTACK_CURRENCIES = new Set(['NGN', 'USD', 'GHS', 'ZAR', 'KES']);
 
@@ -29,6 +29,7 @@ const DELIVERY_META = {
 
 const payOptions = [
   { id: 'paystack', label: 'Paystack', desc: 'Nigerian debit/credit cards & bank transfer', flag: '🇳🇬' },
+  { id: 'flutterwave', label: 'Flutterwave', desc: 'Cards, mobile money, USSD & more across Africa', flag: '🌍' },
   { id: 'transfer', label: 'Bank Transfer', desc: 'Direct bank transfer to Perrys Hairline account', flag: '🏦' },
 ];
 
@@ -71,7 +72,8 @@ export default function CheckoutPage() {
   const payRate     = (code) => rates[code] ?? (code === 'NGN' ? 1 : rates['USD'] ?? 1);
 
   const SDK_URLS = {
-    paystack: 'https://js.paystack.co/v1/inline.js',
+    paystack:     'https://js.paystack.co/v1/inline.js',
+    flutterwave:  'https://checkout.flutterwave.com/v3.js',
   };
 
   useEffect(() => {
@@ -89,7 +91,7 @@ export default function CheckoutPage() {
   }));
 
   const subtotal = state.cart.reduce((s, i) => s + i.price * i.qty, 0);
-  const service = Math.round(subtotal * 0.025);
+  const service = Math.round(subtotal * 0.02);
   const deliveryFee = deliveryOptions.find((o) => o.id === delivery)?.fee || 0;
   const itemCount = state.cart.reduce((s, i) => s + i.qty, 0);
   const hairDiscount = itemCount * 5000;
@@ -139,7 +141,7 @@ export default function CheckoutPage() {
         const qty = order.items.find((i) => i.id === p.id)?.qty || 0;
         return sum + p.price * qty;
       }, 0);
-      const serverVat = Math.round(serverSubtotal * 0.025);
+      const serverVat = Math.round(serverSubtotal * 0.02);
       const serverDelivery = deliveryOptions.find((o) => o.id === order.delivery)?.fee || 0;
       const serverTotal = serverSubtotal + serverVat + serverDelivery;
       order = { ...order, total: serverTotal };
@@ -156,7 +158,7 @@ export default function CheckoutPage() {
       }
 
       try {
-        if (state.user?.id) await insertOrder(order, state.user.id);
+        await insertOrder(order, state.user?.id || null);
       } catch {
         orderSaved = false;
       }
@@ -281,6 +283,44 @@ export default function CheckoutPage() {
         if (s) s.addEventListener('load', openPaystack, { once: true });
         else { setProcessing(false); dispatch({ type: 'SET_TOAST', payload: { msg: 'Paystack failed to load — check your connection', icon: '❌' } }); }
       }
+    } else if (payMethod === 'flutterwave') {
+      const flwKey = import.meta.env.VITE_FLUTTERWAVE_PUBLIC_KEY;
+
+      const openFlutterwave = () => {
+        const serialized = JSON.stringify(order);
+        sessionStorage.setItem('pending_order', serialized);
+        localStorage.setItem('pending_order', serialized);
+
+        window.FlutterwaveCheckout({
+          public_key: flwKey,
+          tx_ref: order.id,
+          amount: Math.round(converted(total) * 100) / 100,
+          currency: currency.code === 'NGN' ? 'NGN' : (currency.code === 'GHS' ? 'GHS' : (currency.code === 'KES' ? 'KES' : (currency.code === 'ZAR' ? 'ZAR' : (currency.code === 'GBP' ? 'GBP' : 'USD')))),
+          payment_options: 'card,mobilemoney,ussd,banktransfer',
+          customer: { email: form.email, phone_number: form.phone, name: form.name },
+          customizations: { title: "Perry's Hairline", description: 'Hair purchase' },
+          callback: (data) => {
+            sessionStorage.removeItem('pending_order');
+            localStorage.removeItem('pending_order');
+            if (data.status === 'successful' || data.status === 'completed') {
+              verifyAndConfirm(order, data.transaction_id || data.tx_ref);
+            } else {
+              setProcessing(false);
+              payBtnRef.current?.focus();
+              dispatch({ type: 'SET_TOAST', payload: { msg: 'Payment was not completed', icon: '❌' } });
+            }
+          },
+          onclose: () => { setProcessing(false); payBtnRef.current?.focus(); },
+        });
+      };
+
+      if (window.FlutterwaveCheckout) {
+        openFlutterwave();
+      } else {
+        const s = document.querySelector(`script[src="${SDK_URLS.flutterwave}"]`);
+        if (s) s.addEventListener('load', openFlutterwave, { once: true });
+        else { setProcessing(false); dispatch({ type: 'SET_TOAST', payload: { msg: 'Flutterwave failed to load — check your connection', icon: '❌' } }); }
+      }
     } else if (payMethod === 'transfer') {
       order.status = 0;
       saveAndConfirm(order);
@@ -400,6 +440,11 @@ export default function CheckoutPage() {
                   </div>
                 </div>
               ))}
+              {payMethod === 'flutterwave' && (
+                <div style={{ background: '#fff8f0', border: '1px solid #f0b070', borderRadius: 8, padding: '12px 14px', marginBottom: 16, fontSize: 13, color: '#7a3800', lineHeight: 1.6 }}>
+                  <strong>Flutterwave:</strong> Pay with card, mobile money, USSD, or bank transfer. After payment, your order is confirmed automatically.
+                </div>
+              )}
               {payMethod === 'paystack' && (
                 <div style={{ background: '#fffbe6', border: '1px solid #f0d070', borderRadius: 8, padding: '12px 14px', marginBottom: 16, fontSize: 13, color: '#7a5800', lineHeight: 1.6 }}>
                   <strong>Important:</strong> After completing payment on Paystack, <strong>return to this page</strong> to confirm your order. Do not close your browser — your order will be confirmed automatically once you're back.
@@ -493,7 +538,7 @@ export default function CheckoutPage() {
               {couponError && <p style={{ fontSize: 11, color: '#c0392b', marginTop: 4, marginBottom: 0 }}>{couponError}</p>}
             </div>
 
-            {[['Subtotal', fmtLocal(subtotal)], ['VAT (2.5%)', fmtLocal(service)], ['Delivery', fmtLocal(deliveryFee)]].map(([l, v]) => (
+            {[['Subtotal', fmtLocal(subtotal)], ['VAT (2%)', fmtLocal(service)], ['Delivery', fmtLocal(deliveryFee)]].map(([l, v]) => (
               <div key={l} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 8, color: 'var(--text-mid)' }}>
                 <span>{l}</span><span>{v}</span>
               </div>

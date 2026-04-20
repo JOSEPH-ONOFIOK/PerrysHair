@@ -93,10 +93,8 @@ export default function CheckoutPage() {
   const subtotal = state.cart.reduce((s, i) => s + i.price * i.qty, 0);
   const service = Math.round(subtotal * 0.02);
   const deliveryFee = deliveryOptions.find((o) => o.id === delivery)?.fee || 0;
-  const itemCount = state.cart.reduce((s, i) => s + i.qty, 0);
-  const hairDiscount = itemCount * 5000;
   const couponDiscount = appliedCoupon ? appliedCoupon.discount : 0;
-  const total = Math.max(0, subtotal + service + deliveryFee - hairDiscount - couponDiscount);
+  const total = Math.max(0, subtotal + service + deliveryFee - couponDiscount);
 
   const handleApplyCoupon = () => {
     setCouponError('');
@@ -543,10 +541,6 @@ export default function CheckoutPage() {
                 <span>{l}</span><span>{v}</span>
               </div>
             ))}
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 8, color: '#2D7A51', fontWeight: 600 }}>
-              <span>🎉 Hair Discount ({itemCount} × ₦5,000)</span>
-              <span>−{fmtLocal(hairDiscount)}</span>
-            </div>
             {appliedCoupon && (
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 8, color: '#2D7A51', fontWeight: 600 }}>
                 <span>Coupon ({appliedCoupon.label})</span>

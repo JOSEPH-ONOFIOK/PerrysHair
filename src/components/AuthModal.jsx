@@ -48,8 +48,13 @@ export default function AuthModal() {
           const isWrongPassword = signInErr.message?.toLowerCase().includes('invalid login credentials') ||
             signInErr.message?.toLowerCase().includes('invalid password');
           if (isWrongPassword) {
-            await supabase.auth.resetPasswordForEmail(form.email, { redirectTo: window.location.origin });
-            dispatch({ type: 'SET_TOAST', payload: { msg: "We've upgraded our platform! Check your email for a one-time login link to set your new password.", icon: '📧' } });
+            const cooldownKey = `reset_sent_${form.email}`;
+            const lastSent = sessionStorage.getItem(cooldownKey);
+            if (!lastSent || Date.now() - Number(lastSent) > 60000) {
+              await supabase.auth.resetPasswordForEmail(form.email, { redirectTo: window.location.origin });
+              sessionStorage.setItem(cooldownKey, Date.now());
+            }
+            dispatch({ type: 'SET_TOAST', payload: { msg: "We've upgraded our platform! Check your email for a login link to set your new password.", icon: '📧' } });
             setLoading(false);
             return;
           }

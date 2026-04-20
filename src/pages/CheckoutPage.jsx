@@ -182,7 +182,7 @@ export default function CheckoutPage() {
 
   const verifyAndConfirm = async (order, reference) => {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
+    const timeout = setTimeout(() => controller.abort(), 120000);
     try {
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-payment`,

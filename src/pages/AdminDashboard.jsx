@@ -236,6 +236,7 @@ export default function AdminDashboard() {
     );
 
   const tab = state.adminTab;
+  const [revenueVisible, setRevenueVisible] = useState(true);
   const totalRevenue = state.orders.reduce((s, o) => s + o.total, 0);
   const lagosOrders = state.orders.filter((o) => o.delivery === 'lagos');
   const nigOrders = state.orders.filter((o) => o.delivery === 'nigeria');
@@ -254,13 +255,20 @@ export default function AdminDashboard() {
       {/* Stats */}
       <div className="admin-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 28 }}>
         {[
-          ['Total Revenue', fmt(totalRevenue), '💰', '#E8F5EE', '#2D7A51'],
+          ['Total Revenue', revenueVisible ? fmt(totalRevenue) : '₦ ••••••', '💰', '#E8F5EE', '#2D7A51'],
           ['Total Orders', state.orders.length, '📦', '#FFF3E0', '#B06000'],
           ['Lagos Orders', lagosOrders.length, '🏙️', '#E8F0FF', '#2D4CB0'],
           ['National', nigOrders.length, '🇳🇬', '#FFF0F5', '#B02D5A'],
           ['International', intlOrders.length, '✈️', '#F0F8FF', '#0070B0'],
         ].map(([label, val, icon, bg, col]) => (
-          <div key={label} className="card" style={{ padding: 20, background: bg, border: 'none' }}>
+          <div key={label} className="card" style={{ padding: 20, background: bg, border: 'none', position: 'relative' }}>
+            {label === 'Total Revenue' && (
+              <button onClick={() => setRevenueVisible(v => !v)}
+                style={{ position: 'absolute', top: 12, right: 12, background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, opacity: 0.6 }}
+                title={revenueVisible ? 'Hide revenue' : 'Show revenue'}>
+                {revenueVisible ? '👁' : '🙈'}
+              </button>
+            )}
             <div style={{ fontSize: 24 }}>{icon}</div>
             <div style={{ fontFamily: 'Playfair Display', fontSize: 24, fontWeight: 700, color: col, marginTop: 8 }}>{val}</div>
             <div style={{ fontSize: 12, color: col, opacity: 0.8, marginTop: 2 }}>{label}</div>

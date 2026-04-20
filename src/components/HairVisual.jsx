@@ -86,24 +86,18 @@ const SHAPES = {
   ),
 };
 
-function optimizeCloudinary(url, size) {
-  if (!url || !url.includes('res.cloudinary.com') || url.includes('f_auto')) return url;
-  return url.replace('/upload/', `/upload/f_auto,q_auto,w_${size * 2}/`);
-}
-
 export default function HairVisual({ image, style = {}, size = 200, priority = false }) {
   // If image is a real URL, render a photo instead of SVG
   if (image && (image.startsWith('http') || image.startsWith('blob:'))) {
     return (
       <img
-        src={optimizeCloudinary(image, size)}
+        src={image}
         alt="product"
         width={size}
         height={size}
-        loading={priority ? 'eager' : 'lazy'}
-        decoding={priority ? 'sync' : 'async'}
-        fetchPriority={priority ? 'high' : 'low'}
-        onError={(e) => { if (e.target.src !== image) e.target.src = image; }}
+        loading="eager"
+        decoding="async"
+        fetchPriority={priority ? 'high' : 'auto'}
         style={{ objectFit: 'cover', borderRadius: 8, display: 'block', ...style }}
       />
     );

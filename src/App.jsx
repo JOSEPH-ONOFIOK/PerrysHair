@@ -247,23 +247,6 @@ function AppInner() {
     }
   };
 
-  const MAINTENANCE_UNTIL = new Date('2026-04-20T18:00:00');
-  if (new Date() < MAINTENANCE_UNTIL) {
-    return (
-      <div style={{ minHeight: '100vh', background: 'var(--cream)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20, padding: '24px', textAlign: 'center' }}>
-        <GlobalStyles />
-        <div style={{ fontSize: 56 }}>🛠️</div>
-        <h1 style={{ fontFamily: 'Playfair Display', fontSize: 28, color: 'var(--espresso)', margin: 0 }}>We'll be right back!</h1>
-        <p style={{ fontSize: 16, color: 'var(--text-mid)', maxWidth: 420, lineHeight: 1.7, margin: 0 }}>
-          Perry's Hairline is currently undergoing maintenance. We'll be back by <strong>6:00 PM tomorrow</strong> — fresher and better than ever. 💛
-        </p>
-        <p style={{ fontSize: 14, color: 'var(--text-light)', maxWidth: 380, lineHeight: 1.7, margin: 0 }}>
-          All existing orders are safe and still in progress. For urgent enquiries, reach us on WhatsApp or email <a href="mailto:hairlinebyperry@gmail.com" style={{ color: 'var(--gold)' }}>hairlinebyperry@gmail.com</a>.
-        </p>
-      </div>
-    );
-  }
-
   if (verifying) {
     return (
       <div style={{ minHeight: '100vh', background: 'var(--cream)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}

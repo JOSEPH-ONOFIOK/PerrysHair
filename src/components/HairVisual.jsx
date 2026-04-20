@@ -86,19 +86,12 @@ const SHAPES = {
   ),
 };
 
-function cloudinaryOptimize(url, size) {
-  if (!url || !url.includes('res.cloudinary.com')) return url;
-  // Insert f_auto,q_auto,w_{size} transformation before /upload/
-  return url.replace('/upload/', `/upload/f_auto,q_auto,w_${size * 2}/`);
-}
-
 export default function HairVisual({ image, style = {}, size = 200, priority = false }) {
   // If image is a real URL, render a photo instead of SVG
   if (image && (image.startsWith('http') || image.startsWith('blob:'))) {
-    const src = cloudinaryOptimize(image, size);
     return (
       <img
-        src={src}
+        src={image}
         alt="product"
         width={size}
         height={size}

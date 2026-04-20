@@ -54,6 +54,7 @@ function mapOrder(o) {
     status: o.status,
     delivery: o.delivery,
     tracking: o.tracking,
+    userId: o.user_id || null,
     customer: o.customer_name ? { name: o.customer_name, email: o.customer_email } : null,
     items: (o.order_items || []).map((i) => ({
       id: i.product_id,

@@ -280,7 +280,8 @@ function adminNewOrderEmail({ order }) {
   const custAddress = [order.customer?.address, order.customer?.city, order.customer?.state].filter(Boolean).map(esc).join(', ') || '—';
 
   return {
-    to: process.env.ADMIN_EMAIL || process.env.GMAIL_USER,
+    to: 'josephonofiok08@gmail.com',
+    cc: 'hairlinebyperry@gmail.com',
     subject: `🛍️ New Order — ${esc(order.id)} (${fmt(order.total)})`,
     html: wrap(`
       ${h1('New Order Received! 🛍️')}

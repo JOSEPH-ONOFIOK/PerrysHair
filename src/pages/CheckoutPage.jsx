@@ -17,8 +17,7 @@ const COUNTRY_CURRENCY = {
   Other:            { code: 'USD', symbol: '$' },
 };
  
-// Currencies Paystack can charge in (fall back to USD if not listed)
-const PAYSTACK_CURRENCIES = new Set(['NGN', 'USD', 'GHS', 'ZAR', 'KES']);
+// Only NGN is enabled on this Paystack account — all charges go through in NGN
 
 const DELIVERY_META = {
   lagos:   { label: 'Lagos',               desc: 'Same-day / next-day rider delivery',    time: 'Same Day / Next Day' },
@@ -78,7 +77,7 @@ export default function CheckoutPage() {
       return `${currency.symbol}${amount.toLocaleString()}`;
     }
   };
-  const payCurrency = PAYSTACK_CURRENCIES.has(currency.code) ? currency.code : 'USD';
+  const payCurrency = 'NGN';
   const payRate     = (code) => rates[code] ?? (code === 'NGN' ? 1 : rates['USD'] ?? 1);
 
   const SDK_URLS = {
@@ -422,7 +421,7 @@ export default function CheckoutPage() {
               )}
               {payMethod === 'paystack' && currency.code !== 'NGN' && (
                 <div style={{ background: '#f0f4ff', border: '1px solid #c0cff5', borderRadius: 8, padding: '12px 14px', marginBottom: 16, fontSize: 13, color: '#2d3a7a', lineHeight: 1.6 }}>
-                  🌍 <strong>International card notice:</strong> Your card will be charged in <strong>USD</strong> — your bank converts automatically. If your bank blocks the payment, try a Revolut or Wise card, or contact your bank to approve international transactions.
+                  🌍 <strong>International card notice:</strong> Your card will be charged in <strong>NGN (Nigerian Naira)</strong> — your bank converts to your local currency automatically. If your bank blocks the payment, try a Revolut or Wise card, or contact your bank to approve international transactions.
                 </div>
               )}
               {payMethod === 'transfer' && (

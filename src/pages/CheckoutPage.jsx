@@ -21,10 +21,21 @@ const COUNTRY_CURRENCY = {
 const PAYSTACK_CURRENCIES = new Set(['NGN', 'USD', 'GHS', 'ZAR', 'KES']);
 
 const DELIVERY_META = {
-  lagos:   { label: 'Lagos',              desc: 'Fee paid directly to rider on delivery — price varies', time: 'Same Day / Next Day' },
-  nigeria: { label: 'Nigeria (Interstate)', desc: 'GUO / GIGM Bus Delivery — flat rate',                  time: 'Within a week or 6 working days' },
-  uk:      { label: 'United Kingdom',     desc: 'DHL Express + Duties',                                   time: '5–10 days' },
-  us:      { label: 'United States',      desc: 'DHL Express + Duties',                                   time: '7–14 days' },
+  lagos:   { label: 'Lagos',               desc: 'Same-day / next-day rider delivery',    time: 'Same Day / Next Day' },
+  nigeria: { label: 'Nigeria (Interstate)', desc: 'GUO / GIGM Bus Delivery — flat rate',  time: 'Within a week or 6 working days' },
+  uk:      { label: 'United Kingdom',       desc: 'DHL Express + Duties',                 time: '5–10 days' },
+  us:      { label: 'United States',        desc: 'DHL Express + Duties',                 time: '7–14 days' },
+};
+
+const COUNTRY_ZONE = {
+  Nigeria:          ['lagos', 'nigeria'],
+  'United Kingdom': ['uk'],
+  'United States':  ['us'],
+  Ghana:            ['us'],
+  Kenya:            ['us'],
+  'South Africa':   ['us'],
+  Canada:           ['us'],
+  Other:            ['us'],
 };
 
 const payOptions = [
@@ -84,9 +95,10 @@ export default function CheckoutPage() {
     document.head.appendChild(s);
   }, [step, payMethod]);
 
-  const deliveryOptions = Object.entries(DELIVERY_META).map(([id, meta]) => ({
-    id, ...meta, fee: state.delivery[id] ?? 0,
-  }));
+  const countryZones = COUNTRY_ZONE[form.country] || ['us'];
+  const deliveryOptions = Object.entries(DELIVERY_META)
+    .filter(([id]) => countryZones.includes(id))
+    .map(([id, meta]) => ({ id, ...meta, fee: state.delivery[id] ?? 0 }));
 
   const subtotal = state.cart.reduce((s, i) => s + i.price * i.qty, 0);
   const service = Math.round(subtotal * 0.02);
@@ -340,7 +352,12 @@ export default function CheckoutPage() {
                 </div>
                 <div>
                   <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-mid)', display: 'block', marginBottom: 6 }}>Country</label>
-                  <select className="input-field" value={form.country} onChange={(e) => set('country', e.target.value)}>
+                  <select className="input-field" value={form.country} onChange={(e) => {
+                    const country = e.target.value;
+                    set('country', country);
+                    const zones = COUNTRY_ZONE[country] || ['us'];
+                    if (!zones.includes(delivery)) setDelivery(zones[0]);
+                  }}>
                     {['Nigeria','Ghana','Kenya','South Africa','United Kingdom','United States','Canada','Other'].map((c) => <option key={c}>{c}</option>)}
                   </select>
                 </div>
@@ -369,7 +386,7 @@ export default function CheckoutPage() {
                       </div>
                     </div>
                     <span style={{ fontWeight: 700, color: 'var(--gold)' }}>
-                      {opt.id === 'lagos' ? 'Pay on delivery' : fmtLocal(opt.fee)}
+                      {opt.fee === 0 ? 'Free' : fmtLocal(opt.fee)}
                     </span>
                   </div>
                 </div>

@@ -420,16 +420,12 @@ export async function removeFromWishlist(userId, productId) {
 }
 
 export async function uploadProductImage(file) {
-  const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-  const preset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-  const form = new FormData();
-  form.append('file', file);
-  form.append('upload_preset', preset);
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloud}/image/upload`, {
-    method: 'POST',
-    body: form,
-  });
-  const data = await res.json();
-  if (!data.secure_url) throw new Error(data.error?.message || 'Cloudinary upload failed');
-  return data.secure_url;
+  const ext = file.name.split('.').pop();
+  const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const { error } = await supabase.storage
+    .from('product-images')
+    .upload(fileName, file, { upsert: false });
+  if (error) throw new Error(error.message);
+  const { data } = supabase.storage.from('product-images').getPublicUrl(fileName);
+  return data.publicUrl;
 }
